@@ -1,0 +1,25 @@
+{
+  "name": "@pokeshop/database",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1"
+  },
+  "devDependencies": {
+    "@pokeshop/tsconfig": "workspace:*",
+    "@types/node": "^22.13.9",
+    "prisma": "^6.4.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum ListingSaleType {
+  PRECO_FIXO
+  PROPOSTAS
+}
+
+enum ListingStatus {
+  DISPONIVEL
+  AGUARDANDO_CONFIRMACAO
+  NEGOCIACAO_ABERTA
+  VENDIDO
+  CANCELADO
+}
+
+enum CardCondition {
+  PERFEITO_ESTADO
+  POUCO_USADA
+  MARCAS_DE_USO
+  DANIFICADA
+}
+
+enum ProposalStatus {
+  PENDENTE
+  ACEITA
+  RECUSADA
+}
+
+enum ReportTargetType {
+  POST
+  LISTING
+  CHAT_MESSAGE
+  PROFILE
+}
+
+enum ReportStatus {
+  PENDENTE
+  BANIDO
+  DESCARTADA
+}
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  passwordHash      String?
+  name              String
+  birthDate         DateTime?
+  termsAcceptedAt   DateTime?
+  isBanned          Boolean      @default(false)
+  role              Role         @default(USER)
+  profileVisibility Visibility   @default(PUBLIC)
+  googleId          String?      @unique
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  listings          Listing[]    @relation("SellerListings")
+  proposals         Proposal[]
+  ordersAsBuyer     Order[]      @relation("BuyerOrders")
+  ordersAsSeller    Order[]      @relation("SellerOrders")
+  sentMessages      ChatMessage[]
+  posts             Post[]
+  postLikes         PostLike[]
+  postComments      PostComment[]
+  collections       Collection[]
+  reportsSubmitted  Report[]     @relation("ReporterUser")
+}
+
+model Card {
+  id              String           @id @default(uuid())
+  tcgdexId        String           @unique
+  name            String
+  setName         String
+  cardNumber      String
+  rarity          String
+  imageUrl        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  listings        Listing[]
+  collectionItems CollectionItem[]
+}
+
+model Listing {
+  id                   String          @id @default(uuid())
+  cardId               String
+  sellerId             String
+  saleType             ListingSaleType
+  priceInCents         Int
+  startingPriceInCents Int?
+  condition            CardCondition
+  language             String          @default("PT-BR")
+  edition              String?
+  description          String?
+  status               ListingStatus   @default(DISPONIVEL)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  card                 Card            @relation(fields: [cardId], references: [id])
+  seller               User            @relation("SellerListings", fields: [sellerId], references: [id])
+  photos               ListingPhoto[]
+  proposals            Proposal[]
+  order                Order?
+  linkedPosts          Post[]
+}
+
+model ListingPhoto {
+  id         String   @id @default(uuid())
+  listingId  String
+  s3Key      String
+  url        String?
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Proposal {
+  id            String         @id @default(uuid())
+  listingId     String
+  buyerId       String
+  amountInCents Int
+  status        ProposalStatus @default(PENDENTE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  listing       Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer         User           @relation(fields: [buyerId], references: [id])
+}
+
+model Order {
+  id           String        @id @default(uuid())
+  listingId    String        @unique
+  buyerId      String
+  sellerId     String
+  status       ListingStatus
+  confirmedAt  DateTime?
+  soldAt       DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  listing      Listing       @relation(fields: [listingId], references: [id])
+  buyer        User          @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller       User          @relation("SellerOrders", fields: [sellerId], references: [id])
+  chatRoom     ChatRoom?
+}
+
+model ChatRoom {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  messages      ChatMessage[]
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  chatRoomId String
+  senderId   String
+  content    String
+  createdAt  DateTime @default(now())
+
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  sender     User     @relation(fields: [senderId], references: [id])
+}
+
+model Post {
+  id              String        @id @default(uuid())
+  authorId        String
+  content         String
+  visibility      Visibility    @default(PUBLIC)
+  linkedListingId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  author          User          @relation(fields: [authorId], references: [id])
+  linkedListing   Listing?      @relation(fields: [linkedListingId], references: [id])
+  photos          PostPhoto[]
+  likes           PostLike[]
+  comments        PostComment[]
+}
+
+model PostPhoto {
+  id         String   @id @default(uuid())
+  postId     String
+  s3Key      String
+  url        String?
+  orderIndex Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+enum CollectionType {
+  POSSUIDAS
+  WISHLIST
+}
+
+model Collection {
+  id         String           @id @default(uuid())
+  userId     String
+  name       String
+  type       CollectionType
+  visibility Visibility       @default(PUBLIC)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  user       User             @relation(fields: [userId], references: [id])
+  items      CollectionItem[]
+}
+
+model CollectionItem {
+  id           String     @id @default(uuid())
+  collectionId String
+  cardId       String
+  createdAt    DateTime   @default(now())
+
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  card         Card       @relation(fields: [cardId], references: [id])
+
+  @@unique([collectionId, cardId])
+}
+
+model Report {
+  id             String           @id @default(uuid())
+  reporterId     String
+  targetType     ReportTargetType
+  targetId       String
+  reason         String
+  contentSnippet String?
+  status         ReportStatus     @default(PENDENTE)
+  resolutionNote String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  reporter       User             @relation("ReporterUser", fields: [reporterId], references: [id])
+}
