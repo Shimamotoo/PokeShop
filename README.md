@@ -1,4 +1,4 @@
-# Pokémon TCG Platform
+# PokeShop
 
 Uma plataforma web para colecionadores de Pokémon TCG no Brasil, combinando catálogo de cartas, marketplace e recursos sociais.
 
@@ -29,7 +29,7 @@ As decisões aprovadas para o MVP estão registradas nos ADRs:
 - [Glossário do domínio](docs/discovery/GLOSSARY.md)
 - [Opções e visão de arquitetura](docs/architecture/OPTIONS.md)
 - [Decisões de arquitetura (ADRs)](docs/architecture/adr/)
-- [Tickets locais do MVP](.scratch/pokemon-tcg-platform/issues/)
+- [Tickets locais do MVP](.scratch/pokeshop/issues/)
 
 ## Estado atual
 

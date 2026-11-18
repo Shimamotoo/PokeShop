@@ -1,4 +1,4 @@
-# Pokémon TCG Platform — spec draft for issue tracker
+# PokeShop — spec draft for issue tracker
 
 **Status:** Draft synthesized from the current conversation and reviewed project documents. The test seam was confirmed by the product owner. This draft has not been published to an issue tracker.
 

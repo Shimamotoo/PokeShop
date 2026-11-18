@@ -1,4 +1,4 @@
-# Glossário — Pokémon TCG Platform
+# Glossário — PokeShop
 
 **Status:** Linguagem de domínio e máquina de estados aprovadas para o MVP.
 

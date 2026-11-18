@@ -4,7 +4,7 @@
 Aprovado
 
 ## Contexto
-O MVP da plataforma Pokémon TCG abrange catálogo de cartas, marketplace com máquina de estados rigorosa, rede social e chat de negociação. É fundamental garantir velocidade de desenvolvimento, alta performance e consistência transacional atômica para o estoque dos exemplares físicos.
+O MVP da plataforma PokeShop abrange catálogo de cartas, marketplace com máquina de estados rigorosa, rede social e chat de negociação. É fundamental garantir velocidade de desenvolvimento, alta performance e consistência transacional atômica para o estoque dos exemplares físicos.
 
 ## Decisão
 1. **Linguagem:** TypeScript para Frontend e Backend.

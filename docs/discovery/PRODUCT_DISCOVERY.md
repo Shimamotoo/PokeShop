@@ -1,4 +1,4 @@
-# Descoberta do produto — Pokémon TCG Platform
+# Descoberta do produto — PokeShop
 
 **Status:** Descoberta de produto revisada e alinhada com a equipe.
 

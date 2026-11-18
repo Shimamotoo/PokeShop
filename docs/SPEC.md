@@ -1,4 +1,4 @@
-# SPEC — Pokémon TCG Platform
+# SPEC — PokeShop
 
 **Status:** Especificação de requisitos revisada e alinhada para implementação do MVP.
 

@@ -1,6 +1,6 @@
 # Domain Docs
 
-This is a single-context repository: the product centers on the Pokémon TCG collector platform.
+This is a single-context repository: the product centers on PokeShop, a Pokémon TCG collector platform.
 
 ## Before exploring
 

@@ -1,4 +1,4 @@
-# Arquitetura e Decisões Técnicas — Pokémon TCG Platform
+# Arquitetura e Decisões Técnicas — PokeShop
 
 **Status:** Decisões de arquitetura e stack técnica formalizadas e aprovadas para o MVP.
 
