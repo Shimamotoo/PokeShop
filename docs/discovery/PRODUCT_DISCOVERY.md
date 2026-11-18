@@ -12,10 +12,10 @@ Plataforma voltada à comunidade brasileira de Pokémon TCG que reúne catálogo
 
 ### Catálogo e anúncios
 
-- **Catálogo PT-BR:** Espelho local de cartas em português sincronizado com a API comunitária aberta [TCGdex](https://tcgdex.net/) (fonte externa não-oficial).
+- **Catálogo PT-BR:** Espelho local de cartas em português sincronizado com a API comunitária aberta [TCGdex](https://tcgdex.net/) (fonte externa não-oficial) via script de carga/seed (`pnpm run seed:catalog`).
 - **Campos mínimos:** Nome da carta, coleção, número e raridade.
 - **Anúncios atrelados:** Cada anúncio representa 1 exemplar físico real e deve estar associado a uma carta oficial do catálogo local.
-- **Atributos do exemplar:** Fotos reais enviadas pelo usuário, observações, idioma, edição e seleção obrigatória de uma das 4 condições padronizadas:
+- **Atributos do exemplar:** Fotos reais enviadas pelo usuário (mínimo de 1 e máximo de 5 fotos, formatos JPEG, PNG ou WebP com até 5 MB cada), observações, idioma, edição e seleção obrigatória de uma das 4 condições padronizadas:
   1. *Novo / Perfeito estado:* Sem marcas de dobra, sem desgaste nas bordas (*whitening*) e sem riscos; direto do booster (*Mint/Near Mint*).
   2. *Pouco usada / Ótimo estado:* Desgaste levíssimo quase imperceptível (*Lightly Played/Excellent*).
   3. *Marcas de uso / Bom estado:* Desgaste visível de manuseio ou jogo, sem danos estruturais graves (*Played/Good*).
@@ -48,17 +48,19 @@ O exemplar físico segue uma máquina de estados estrita:
 
 - **Chat Direto:** Criado automaticamente quando o item entra em `NEGOCIACAO_ABERTA`.
 - **Alinhamento prático:** As partes combinam método de pagamento externo e frete/entrega.
+- **Cancelamento manual pelo vendedor:** Se as partes desistirem ou o frete/pagamento for inviável, o vendedor pode cancelar a negociação em `NEGOCIACAO_ABERTA`, destravando o exemplar de volta para `DISPONIVEL` sem esperar 30 dias.
 - **Aviso prévio aos 25 dias:** Se a negociação no chat completar 25 dias sem novas mensagens ou conclusão, o sistema emite um alerta in-app avisando que a negociação expirará em 5 dias.
-- **Timeout de 30 dias:** Se a negociação completar 30 dias sem conclusão, o sistema cancela a negociação automaticamente e o item retorna para `DISPONIVEL` na loja.
+- **Timeout de 30 dias:** Se a negociação completar 30 dias sem novas mensagens, o sistema cancela a negociação automaticamente e o item retorna para `DISPONIVEL` na loja. Qualquer mensagem enviada no chat reinicia os contadores de 25 e 30 dias.
 - **Conclusão:** O vendedor clica em "Marcar como Vendido" ao finalizar o envio/recebimento externo, encerrando o anúncio definitivamente como `VENDIDO`.
-- **Notificações no MVP:** Indicadores visuais e badges dentro do próprio site (**in-app**) sinalizando novas mensagens no chat e mudanças de status.
+- **Notificações no MVP:** Indicadores visuais e badges dentro do próprio site (**in-app**) sinalizando novas mensagens no chat (polling a cada 30 segundos) e mudanças de status.
 
 ### Acesso, Usuários e Moderação
 
 - **Público e Idade:** Acesso permitido para usuários a partir de **13 anos (+13)** com autodeclaração de nascimento e aceite dos Termos de Uso (estipulando supervisão parental para menores de 18 anos). Sem fluxo de KYC no MVP.
+- **Onboarding pós-Google:** Usuários novos autenticados via Google são direcionados para uma etapa de conclusão de perfil ("Complete seu Perfil") para informar data de nascimento e aceitar os Termos antes de ativar a conta. Se menor de 13 anos declarado, o cadastro é abortado.
 - **Consulta pública:** Visitantes sem login podem navegar no catálogo, ver anúncios e visualizar posts públicos.
 - **Login obrigatório:** Exigido para interações sociais, publicação de anúncios, propostas e compras (E-mail/senha e Google).
-- **Moderação:** Usuários podem denunciar posts, anúncios, mensagens de chat e perfis.
+- **Moderação:** Usuários podem denunciar posts, anúncios, mensagens de chat e perfis. Denúncias de chat enviam um snapshot da mensagem para análise em modo somente-leitura.
 - **Sanção no MVP:** **Banimento definitivo imediato** após análise e confirmação da denúncia pelo moderador.
 
 ## Decisões Técnicas Principais

@@ -7,7 +7,7 @@
 **Status:** ready-for-agent
 
 - [ ] O vendedor publica exatamente um Exemplar associado a uma Carta de catálogo.
-- [ ] O anúncio registra preço, idioma, edição, uma Condição do exemplar padronizada, observações e fotos reais.
+- [ ] O anúncio registra preço, idioma, edição, uma Condição do exemplar padronizada, observações e de 1 a 5 fotos reais.
 - [ ] O anúncio publicado fica visível para visitantes sem login.
 - [ ] Fotos são armazenadas em bucket privado S3; o backend só emite URL pré-assinada após validar acesso e visibilidade.
 - [ ] Os formatos JPEG, PNG e WebP e o limite de 5 MB por foto são respeitados.

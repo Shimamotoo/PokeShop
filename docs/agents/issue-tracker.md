@@ -5,7 +5,7 @@ Issues and specs for this repository live as Markdown files in `.scratch/`.
 ## Conventions
 
 - One feature per directory: `.scratch/<feature-slug>/`
-- The feature spec is `.scratch/<feature-slug>/spec.md`
+- The feature spec is `.scratch/<feature-slug>/spec.md` (for the PokeShop MVP, the canonical spec is `docs/SPEC.md`).
 - Implementation tickets are separate files under `.scratch/<feature-slug>/issues/`, numbered from `01` in dependency order as `01-<slug>.md`, `02-<slug>.md`, and so on; never combine multiple tickets into one file.
 - Each ticket has a `Blocked by` line listing prerequisite ticket numbers/titles, or `None (can start immediately)`.
 - When an engineering skill requires the `ready-for-agent` state, record it as `Status: ready-for-agent` in the local Markdown file.

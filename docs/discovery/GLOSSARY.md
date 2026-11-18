@@ -25,6 +25,6 @@
 | :--- | :--- | :--- |
 | `DISPONIVEL` | Anúncio ativo na loja, visível e apto a receber cliques de compra ou propostas. | $\rightarrow$ `AGUARDANDO_CONFIRMACAO`<br>$\rightarrow$ `NEGOCIACAO_ABERTA`<br>$\rightarrow$ `CANCELADO` (se vendedor excluir) |
 | `AGUARDANDO_CONFIRMACAO` | Comprador iniciou compra por preço fixo. Exemplar fica travado temporariamente aguardando aceite ou recusa do vendedor. | $\rightarrow$ `NEGOCIACAO_ABERTA` (se vendedor aceitar)<br>$\rightarrow$ `DISPONIVEL` (se vendedor recusar ou inatividade de 30 dias) |
-| `NEGOCIACAO_ABERTA` | Vendedor aceitou o preço fixo ou aceitou uma proposta. Exemplar fica bloqueado, chat privado é liberado para alinhamento de frete/pagamento externo. | $\rightarrow$ `VENDIDO` (vendedor confirma conclusão)<br>$\rightarrow$ `DISPONIVEL` (se houver inatividade de 30 dias sem conclusão) |
+| `NEGOCIACAO_ABERTA` | Vendedor aceitou o preço fixo ou aceitou uma proposta. Exemplar fica bloqueado, chat privado é liberado para alinhamento de frete/pagamento externo. | $\rightarrow$ `VENDIDO` (vendedor confirma conclusão)<br>$\rightarrow$ `DISPONIVEL` (se vendedor cancelar a negociação ou inatividade de 30 dias sem conclusão) |
 | `VENDIDO` | Negociação externa concluída com sucesso e atestada pelo vendedor. Anúncio é encerrado definitivamente e retirado da loja. | Estado Final |
 | `CANCELADO` | Anúncio removido pelo vendedor antes da venda. Todas as propostas pendentes são descartadas. | Estado Final |

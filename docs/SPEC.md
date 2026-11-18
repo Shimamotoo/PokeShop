@@ -26,17 +26,18 @@ Conectar colecionadores brasileiros de Pokémon TCG (com idade igual ou superior
 - **FR-001:** Visitantes sem login podem navegar no catálogo, consultar anúncios e visualizar publicações e coleções públicas.
 - **FR-002:** Login é obrigatório para publicar anúncios, enviar propostas, iniciar compras ou interagir socialmente (postar, curtir, comentar, seguir).
 - **FR-003:** Métodos de autenticação suportados: e-mail/senha e Google.
-- **FR-004:** O formulário de cadastro exige autodeclaração de nascimento confirmando idade mínima de 13 anos.
+- **FR-004:** O formulário de cadastro exige autodeclaração de nascimento confirmando idade mínima de 13 anos e aceite dos Termos de Uso.
+- **FR-005 (Onboarding pós-OAuth Google):** Usuários existentes entram com 1 clique via Google. Para novos usuários que autenticam com Google pela primeira vez, o sistema redireciona obrigatoriamente para uma etapa de conclusão de cadastro ("Complete seu Perfil") para coletar a data de nascimento e o aceite dos Termos de Uso antes de ativar a conta. Se a data informada corresponder a menos de 13 anos, a criação da conta é recusada e a sessão é descartada.
 
 ### Catálogo de Cartas
 - **FR-010:** O catálogo cobre cartas de Pokémon TCG lançadas em português do Brasil (PT-BR).
-- **FR-011:** Sincronização externa realizada a partir da API pública comunitária [TCGdex](https://tcgdex.net/) (fonte externa não-oficial), com cache e espelhamento local no PostgreSQL.
+- **FR-011:** Sincronização externa realizada a partir da API pública comunitária [TCGdex](https://tcgdex.net/) (fonte externa não-oficial), com cache e espelhamento local no PostgreSQL gerenciado por script CLI/seed (`pnpm run seed:catalog`).
 - **FR-012:** Campos mínimos armazenados no catálogo: nome da carta, coleção, número e raridade.
 - **FR-013:** Todo anúncio deve estar obrigatoriamente associado a uma carta válida existente no catálogo local.
 
 ### Anúncios e Atributos do Exemplar
 - **FR-020:** Cada anúncio corresponde a exatamente 1 (um) exemplar físico real.
-- **FR-021:** O anúncio exige o upload de fotos reais do exemplar, descrição/observações livres, idioma, edição e seleção obrigatória de uma condição física padronizada:
+- **FR-021:** O anúncio exige o upload de fotos reais do exemplar (mínimo de 1 e máximo de 5 fotos, formatos JPEG, PNG ou WebP com até 5 MB por arquivo), descrição/observações livres, idioma, edição e seleção obrigatória de uma condição física padronizada:
   - *Novo / Perfeito estado:* Sem marcas de dobra, sem desgaste nas bordas (*whitening*) e sem riscos na superfície; estado direto do booster (*Mint/Near Mint*).
   - *Pouco usada / Ótimo estado:* Levíssimo desgaste quase imperceptível nas bordas ou cantos (*Lightly Played/Excellent*).
   - *Marcas de uso / Bom estado:* Desgaste visível de manuseio ou jogo, mas sem danos estruturais graves (*Played/Good*).
@@ -68,13 +69,14 @@ O exemplar transita pelos estados: `DISPONIVEL` $\rightarrow$ `AGUARDANDO_CONFIR
 - **FR-050:** Ao entrar em `NEGOCIACAO_ABERTA`, o sistema disponibiliza uma sala de chat direto e privado exclusiva entre comprador e vendedor.
 - **FR-051:** As partes utilizam o chat para alinhar frete, método de envio e detalhes de pagamento externo.
 - **FR-052:** A atualização de mensagens no chat ocorre via **polling HTTP básico** no frontend (a cada 3 a 5 segundos).
-- **FR-053:** A plataforma exibe **notificações in-app** (badges visuais de mensagens não lidas e alertas de alteração de estado no cabeçalho).
-- **FR-054 (Alerta de Inatividade aos 25 dias):** Se a negociação estiver aberta e completar 25 dias sem novas mensagens ou conclusão, o sistema emite um alerta in-app para ambas as partes: *"Sua negociação expira em 5 dias. Caso já tenha finalizado, marque o item como vendido"*.
-- **FR-055 (Timeout de Inatividade da Negociação aos 30 dias):** Se a negociação completar **30 dias sem atualizações** e o vendedor não tiver marcado como vendido, o sistema cancela a negociação automaticamente e o exemplar transita de volta para `DISPONIVEL` na loja.
+- **FR-053:** A plataforma exibe **notificações in-app** (badges visuais de mensagens não lidas no cabeçalho com polling espaçado a cada 30 segundos e alertas de alteração de estado).
+- **FR-054 (Alerta de Inatividade aos 25 dias):** Se a negociação estiver aberta e completar 25 dias sem novas mensagens no chat (com base no timestamp da última mensagem enviada ou de abertura), o sistema emite um alerta in-app para ambas as partes: *"Sua negociação expira em 5 dias. Caso já tenha finalizado, marque o item como vendido"*.
+- **FR-055 (Timeout de Inatividade da Negociação aos 30 dias):** Se a negociação completar **30 dias sem novas mensagens** e o vendedor não tiver marcado como vendido, o sistema cancela a negociação automaticamente e o exemplar transita de volta para `DISPONIVEL` na loja. Qualquer mensagem enviada no chat reinicia os contadores de inatividade.
 - **FR-056:** Após concluir o pagamento e a entrega externa, o vendedor clica em **"Marcar como Vendido"**, transicionando o exemplar definitivamente para `VENDIDO`.
+- **FR-057 (Cancelamento Manual pelo Vendedor):** Caso as partes desistam da negociação ou constatem inviabilidade de frete/pagamento, o vendedor pode cancelar a negociação manualmente a qualquer momento enquanto em `NEGOCIACAO_ABERTA`, retornando o exemplar imediatamente para `DISPONIVEL` na loja sem necessidade de esperar o timeout de 30 dias.
 
 ### Rede Social
-- **FR-060:** Usuários autenticados podem publicar posts, curtir, comentar, seguir outros colecionadores e compartilhar posts via link externo.
+- **FR-060:** Usuários autenticados podem publicar posts (com texto e até 4 fotos nos formatos JPEG, PNG ou WebP com até 5 MB cada), curtir, comentar, seguir outros colecionadores e compartilhar posts via link externo.
 - **FR-061:** Publicações podem conter links diretos exclusivamente para anúncios internos da plataforma.
 - **FR-062:** Usuários podem gerenciar coleções de cartas que possuem e cartas desejadas (*wishlist*).
 - **FR-063:** Feed principal cronológico baseado em perfis seguidos.
@@ -82,7 +84,7 @@ O exemplar transita pelos estados: `DISPONIVEL` $\rightarrow$ `AGUARDANDO_CONFIR
 
 ### Denúncias e Moderação
 - **FR-070:** Usuários podem denunciar publicações, anúncios, mensagens de chat e perfis.
-- **FR-071:** Denúncias são enviadas para fila manual de moderação.
+- **FR-071:** Denúncias são enviadas para fila manual de moderação. Ao denunciar uma mensagem de chat, um snapshot com o contexto da mensagem é disponibilizado em modo somente-leitura na fila de moderação para análise.
 - **FR-072:** A sanção definida no MVP é o **banimento definitivo imediato** da conta após confirmação de infração grave pelo moderador.
 - **FR-073:** O responsável pelo produto atua como moderador inicial.
 
@@ -91,8 +93,8 @@ O exemplar transita pelos estados: `DISPONIVEL` $\rightarrow$ `AGUARDANDO_CONFIR
 ## 4. Requisitos Não Funcionais, Segurança e Privacidade
 
 - **Consistência e Transações ACID:** Transições de estado do exemplar (`DISPONIVEL` $\rightarrow$ `AGUARDANDO_CONFIRMACAO` $\rightarrow$ `NEGOCIACAO_ABERTA` $\rightarrow$ `VENDIDO`) devem ser executadas em transações atômicas no PostgreSQL, impedindo reservas duplicadas.
-- **Privacidade de Mídia (S3):** O bucket AWS S3 deve ser **privado por padrão**. Nenhuma URL pública direta deve ser exposta. O acesso às fotos de anúncios públicos ou mídias de posts/perfis privados é controlado pelo backend por meio de **URLs pré-assinadas (Presigned URLs) com tempo de expiração curto (TTL)**, validadas contra as permissões do usuário solicitante.
-- **Autorização do Chat:** Apenas as duas partes da transação e o moderador (em caso de denúncia) têm autorização para ler ou enviar mensagens na respectiva sala de chat.
+- **Privacidade de Mídia (S3):** O bucket AWS S3 deve ser **privado por padrão**. Nenhuma URL pública direta deve ser exposta. O upload e acesso às fotos (JPEG, PNG e WebP com até 5 MB cada) são controlados pelo backend por meio de **URLs pré-assinadas (Presigned URLs) com tempo de expiração curto (TTL)**, validadas contra as permissões do usuário solicitante.
+- **Autorização do Chat:** Apenas as duas partes da transação têm autorização para ler ou enviar mensagens na respectiva sala de chat. Em caso de denúncia, o moderador tem acesso apenas para consulta em modo somente-leitura do snapshot da mensagem e contexto denunciados, sem permissão de envio de mensagens.
 - **Jobs Agendados:** Rotinas agendadas (cron diário) para envio do alerta de 25 dias e execução do timeout de 30 dias de inatividade.
 
 ---
@@ -127,3 +129,8 @@ O exemplar transita pelos estados: `DISPONIVEL` $\rightarrow$ `AGUARDANDO_CONFIR
 - **Cenário 5 — Privacidade de Imagens no S3:**
   - Usuário posta imagem em uma coleção configurada como `Privada`.
   - Visitante não autorizado tenta acessar o recurso $\rightarrow$ backend recusa a geração da Presigned URL, impedindo o acesso à foto no S3.
+- **Cenário 6 — Cancelamento Manual de Negociação pelo Vendedor:**
+  - Exemplar em `NEGOCIACAO_ABERTA`. As partes constatam no chat que o frete é inviável $\rightarrow$ vendedor clica em "Cancelar Negociação" $\rightarrow$ o chat é encerrado e o exemplar volta imediatamente para `DISPONIVEL` na loja.
+- **Cenário 7 — Onboarding pós-Google (+13 anos):**
+  - Usuário autentica com conta Google pela primeira vez $\rightarrow$ redirecionado para tela de preenchimento de data de nascimento e aceite dos termos.
+  - Se declarar idade inferior a 13 anos $\rightarrow$ cadastro é abortado e nenhuma conta ativa é persistida no sistema.
