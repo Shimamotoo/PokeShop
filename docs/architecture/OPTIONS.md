@@ -52,3 +52,4 @@ PokeShop/
 - [ADR-001: Escolha da Stack TypeScript Fullstack (Next.js + Fastify + Prisma)](adr/ADR-001-stack-e-monolito-modular.md)
 - [ADR-002: Estratégia de Chat via Polling Básico](adr/ADR-002-estrategia-chat-polling.md)
 - [ADR-003: Armazenamento e Privacidade de Fotos no AWS S3 com Presigned URLs](adr/ADR-003-armazenamento-fotos-s3.md)
+- [ADR-004: Estrutura de Pastas Monorepo Modular e Feature-Driven](adr/ADR-004-estrutura-pastas-monorepo-modular.md)
