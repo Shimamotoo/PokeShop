@@ -6,9 +6,11 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import type { CatalogCard } from '@pokeshop/shared';
 import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/features/auth/use-auth';
 
 export default function CatalogCardPage() {
   const { tcgdexId } = useParams<{ tcgdexId: string }>();
+  const { user } = useAuth();
   const [card, setCard] = useState<CatalogCard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,9 +85,25 @@ export default function CatalogCardPage() {
               </dl>
 
               <p className="detail-note">
-                Esta página exibe a ficha oficial da Carta de catálogo. Nos próximos módulos, os
-                anúncios de exemplares físicos publicados por vendedores aparecerão vinculados a esta
-                referência.
+                {user ? (
+                  <>
+                    Sessão ativa como <strong>{user.name}</strong>. Você está autenticado para
+                    publicar anúncios, enviar propostas e comprar exemplares desta carta.
+                  </>
+                ) : (
+                  <>
+                    Visitantes podem consultar o catálogo livremente. Para publicar um anúncio,
+                    enviar proposta ou comprar um exemplar desta carta,{' '}
+                    <Link className="auth-inline-link" href="/entrar">
+                      entre na sua conta
+                    </Link>{' '}
+                    ou{' '}
+                    <Link className="auth-inline-link" href="/cadastro">
+                      crie um cadastro
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
             </div>
           </article>
