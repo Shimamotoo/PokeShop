@@ -1070,3 +1070,498 @@ a:focus-visible {
   font-size: 14px;
   line-height: 1.65;
 }
+
+
+/* ==========================================================================
+   Ticket 03 — Listings Showcase, Grading Badges & Fixed-Price Drawer
+   ========================================================================== */
+
+.detail-seller-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.listing-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--accent-crimson);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms var(--ease-out);
+}
+
+.listing-open-btn:hover {
+  background: var(--accent-crimson-hover);
+}
+
+.listing-feedback-banner {
+  max-width: 1020px;
+  margin: 0 auto 24px;
+  padding: 12px 16px;
+  border: 1px solid rgba(56, 189, 148, 0.4);
+  border-radius: 10px;
+  color: #7ee7c0;
+  background: rgba(56, 189, 148, 0.1);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.listing-drawer-card {
+  max-width: 1020px;
+  margin: 0 auto 36px;
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid var(--border-focus);
+  border-radius: 16px;
+  background: var(--surface-sleeve);
+  box-shadow: 0 22px 44px -18px rgba(0, 0, 0, 0.65);
+  animation: reveal-stage 220ms var(--ease-out);
+}
+
+.listing-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.listing-drawer-header h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.listing-drawer-header p {
+  margin: 4px 0 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.listing-drawer-close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--ink-secondary);
+  background: var(--surface-stage);
+  cursor: pointer;
+}
+
+.listing-drawer-close:hover {
+  color: var(--ink-primary);
+  border-color: var(--border-focus);
+}
+
+.listing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.listing-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.listing-textarea {
+  min-height: 84px;
+  padding: 10px 13px;
+  resize: vertical;
+}
+
+.condition-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.condition-fieldset legend {
+  margin-bottom: 10px;
+  color: var(--ink-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.condition-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.condition-option-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-stage);
+  cursor: pointer;
+  transition: border-color 150ms var(--ease-out), background-color 150ms var(--ease-out);
+}
+
+.condition-option-card input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.condition-option-card.is-selected {
+  border-color: var(--accent-crimson);
+  background: rgba(224, 72, 86, 0.08);
+}
+
+.condition-option-title {
+  color: var(--ink-primary);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.condition-option-desc {
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.photo-upload-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border-focus);
+  border-radius: 10px;
+  background: var(--surface-stage);
+}
+
+.photo-upload-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--ink-primary);
+  background: var(--surface-sleeve);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.photo-upload-trigger:hover {
+  border-color: var(--border-focus);
+  background: var(--surface-sleeve-hover);
+}
+
+.photo-upload-counter {
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.staged-photos-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.staged-photo-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-stage);
+  font-size: 12.5px;
+}
+
+.staged-photo-name {
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+.staged-photo-size {
+  color: var(--ink-muted);
+}
+
+.staged-photo-pill button {
+  margin-left: auto;
+  border: 0;
+  color: var(--accent-crimson);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.listings-showcase-section {
+  max-width: 1020px;
+  margin: 0 auto 72px;
+}
+
+.listings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.listing-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 18px 22px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: var(--surface-sleeve);
+  transition: border-color 180ms var(--ease-out);
+}
+
+.listing-row-card:hover {
+  border-color: var(--border-focus);
+}
+
+.listing-row-main {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listing-row-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.condition-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.condition-perfeito_estado {
+  border: 1px solid rgba(232, 185, 73, 0.4);
+  color: var(--rarity-amber);
+  background: rgba(232, 185, 73, 0.12);
+}
+
+.condition-pouco_usada {
+  border: 1px solid rgba(72, 199, 165, 0.35);
+  color: #6ee7b7;
+  background: rgba(72, 199, 165, 0.1);
+}
+
+.condition-marcas_de_uso {
+  border: 1px solid rgba(148, 158, 174, 0.35);
+  color: var(--ink-primary);
+  background: rgba(148, 158, 174, 0.12);
+}
+
+.condition-danificada {
+  border: 1px solid rgba(224, 72, 86, 0.4);
+  color: #fda4af;
+  background: rgba(224, 72, 86, 0.12);
+}
+
+.listing-meta-pill {
+  padding: 3px 9px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--ink-secondary);
+  background: var(--surface-stage);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.listing-row-seller {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13.5px;
+}
+
+.listing-row-description {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.listing-row-aside {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.listing-price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.listing-sale-mode {
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.listing-price-value {
+  color: var(--ink-primary);
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.listing-view-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-focus);
+  border-radius: 8px;
+  color: var(--ink-primary);
+  background: var(--surface-stage);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 150ms var(--ease-out);
+}
+
+.listing-view-link:hover {
+  background: var(--surface-sleeve-hover);
+}
+
+.listing-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(224, 72, 86, 0.45);
+  border-radius: 8px;
+  color: #fda4af;
+  background: rgba(224, 72, 86, 0.1);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.listing-cancel-btn:hover:not(:disabled) {
+  background: rgba(224, 72, 86, 0.2);
+}
+
+.listing-gallery-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.listing-signed-photo-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.signed-url-caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--ink-secondary);
+  background: var(--surface-sleeve);
+  font-size: 11.5px;
+}
+
+.listing-thumbnails-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.listing-thumb-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--ink-secondary);
+  background: var(--surface-sleeve);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.listing-thumb-btn.is-active {
+  border-color: var(--accent-crimson);
+  color: var(--ink-primary);
+}
+
+.listing-detail-price-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-sleeve);
+}
+
+.listing-detail-price {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-primary);
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-status-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--border-focus);
+  border-radius: 999px;
+  color: var(--ink-primary);
+  background: var(--surface-stage);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.listing-owner-controls {
+  margin-top: 20px;
+}

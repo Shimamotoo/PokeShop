@@ -10,9 +10,14 @@ import authPlugin from './plugins/auth.plugin.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { catalogRoutes } from './modules/catalog/catalog.routes.js';
 import { authRoutes, type AuthRoutesOptions } from './modules/auth/auth.routes.js';
+import {
+  listingsRoutes,
+  type ListingsRoutesOptions,
+} from './modules/listings/listings.routes.js';
 
 export type BuildAppOptions = {
   auth?: AuthRoutesOptions;
+  listings?: ListingsRoutesOptions;
   logger?: boolean;
 };
 
@@ -35,6 +40,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   app.register(healthRoutes);
   app.register(catalogRoutes);
   app.register(authRoutes, options.auth ?? {});
+  app.register(listingsRoutes, options.listings ?? {});
 
   return app;
 }
