@@ -23,6 +23,19 @@ export type StoredListingSeller = {
   profileVisibility: 'PUBLIC' | 'PRIVATE';
 };
 
+export type StoredListingActiveOrder = {
+  id: string;
+  buyerId: string;
+  sellerId: string;
+  status: OrderStatusType;
+  createdAt: Date;
+  confirmedAt: Date | null;
+  buyer: {
+    id: string;
+    name: string;
+  };
+};
+
 export type StoredListingRecord = {
   id: string;
   cardId: string;
@@ -40,6 +53,7 @@ export type StoredListingRecord = {
   card: StoredCardSummary;
   seller: StoredListingSeller;
   photos: StoredListingPhoto[];
+  activeOrder?: StoredListingActiveOrder | null;
 };
 
 export type CreateListingRecordInput = {
@@ -106,7 +120,44 @@ const listingInclude = {
       orderIndex: true,
     },
   },
+  orders: {
+    where: {
+      status: {
+        in: ['AGUARDANDO_CONFIRMACAO' as const, 'NEGOCIACAO_ABERTA' as const, 'VENDIDO' as const],
+      },
+    },
+    orderBy: {
+      createdAt: 'desc' as const,
+    },
+    take: 1,
+    select: {
+      id: true,
+      buyerId: true,
+      sellerId: true,
+      status: true,
+      createdAt: true,
+      confirmedAt: true,
+      buyer: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  },
 };
+
+type RawPrismaListingRow = Omit<StoredListingRecord, 'activeOrder'> & {
+  orders: StoredListingActiveOrder[];
+};
+
+function mapPrismaListing(row: RawPrismaListingRow): StoredListingRecord {
+  const { orders, ...listing } = row;
+  return {
+    ...listing,
+    activeOrder: orders[0] ?? null,
+  };
+}
 
 export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRepository {
   return {
@@ -126,7 +177,7 @@ export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRe
     },
 
     async create(data: CreateListingRecordInput): Promise<StoredListingRecord> {
-      return prisma.listing.create({
+      const created = await prisma.listing.create({
         data: {
           cardId: data.cardId,
           sellerId: data.sellerId,
@@ -147,17 +198,21 @@ export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRe
         },
         include: listingInclude,
       });
+
+      return mapPrismaListing(created);
     },
 
     async findById(listingId: string): Promise<StoredListingRecord | null> {
-      return prisma.listing.findUnique({
+      const found = await prisma.listing.findUnique({
         where: { id: listingId },
         include: listingInclude,
       });
+
+      return found ? mapPrismaListing(found) : null;
     },
 
     async findMany(filter: FindListingsFilter): Promise<StoredListingRecord[]> {
-      return prisma.listing.findMany({
+      const rows = await prisma.listing.findMany({
         where: {
           ...(filter.cardId ? { cardId: filter.cardId } : {}),
           ...(filter.tcgdexId ? { card: { tcgdexId: filter.tcgdexId } } : {}),
@@ -167,10 +222,12 @@ export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRe
         orderBy: [{ createdAt: 'desc' }],
         include: listingInclude,
       });
+
+      return rows.map(mapPrismaListing);
     },
 
     async cancelListing(listingId: string): Promise<StoredListingRecord> {
-      return prisma.$transaction(async (tx) => {
+      const cancelled = await prisma.$transaction(async (tx) => {
         await tx.proposal.updateMany({
           where: {
             listingId,
@@ -187,6 +244,8 @@ export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRe
           include: listingInclude,
         });
       });
+
+      return mapPrismaListing(cancelled);
     },
 
     async findMediaAccessContext(s3Key: string): Promise<MediaAccessContext | null> {

@@ -117,7 +117,7 @@ model Listing {
   seller               User            @relation("SellerListings", fields: [sellerId], references: [id])
   photos               ListingPhoto[]
   proposals            Proposal[]
-  order                Order?
+  orders               Order[]
   linkedPosts          Post[]
 }
 
@@ -147,7 +147,7 @@ model Proposal {
 
 model Order {
   id           String        @id @default(uuid())
-  listingId    String        @unique
+  listingId    String
   buyerId      String
   sellerId     String
   status       ListingStatus
@@ -161,6 +161,9 @@ model Order {
   buyer        User          @relation("BuyerOrders", fields: [buyerId], references: [id])
   seller       User          @relation("SellerOrders", fields: [sellerId], references: [id])
   chatRoom     ChatRoom?
+
+  @@index([listingId, status])
+  @@index([status, createdAt])
 }
 
 model ChatRoom {

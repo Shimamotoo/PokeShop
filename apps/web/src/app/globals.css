@@ -1565,3 +1565,252 @@ a:focus-visible {
 .listing-owner-controls {
   margin-top: 20px;
 }
+
+/* ==========================================================================
+   Ticket 05 — Reserva de Preço Fixo e Minhas Negociações
+   ========================================================================== */
+
+.status-chip-disponivel {
+  border-color: rgba(56, 189, 148, 0.35);
+  color: #7ee7c0;
+  background: rgba(56, 189, 148, 0.1);
+}
+
+.status-chip-aguardando_confirmacao {
+  border-color: rgba(232, 185, 73, 0.45);
+  color: var(--rarity-amber);
+  background: rgba(232, 185, 73, 0.12);
+}
+
+.status-chip-negociacao_aberta {
+  border-color: rgba(56, 189, 148, 0.45);
+  color: #7ee7c0;
+  background: rgba(56, 189, 148, 0.14);
+}
+
+.status-chip-cancelado,
+.status-chip-vendido {
+  border-color: var(--border-subtle);
+  color: var(--ink-secondary);
+  background: var(--surface-stage);
+}
+
+.order-inline-feedback {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.order-action-panel {
+  margin-top: 18px;
+}
+
+.order-buy-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  color: #ffffff;
+  background: var(--accent-crimson);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms var(--ease-out);
+}
+
+.order-primary-btn:hover:not(:disabled) {
+  background: var(--accent-crimson-hover);
+}
+
+.order-primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.order-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border-focus);
+  border-radius: 10px;
+  color: var(--ink-primary);
+  background: var(--surface-stage);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.order-secondary-btn:hover:not(:disabled) {
+  background: var(--surface-sleeve-hover);
+}
+
+.order-accept-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(56, 189, 148, 0.45);
+  border-radius: 8px;
+  color: #7ee7c0;
+  background: rgba(56, 189, 148, 0.14);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms var(--ease-out);
+}
+
+.order-accept-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 148, 0.24);
+}
+
+.order-accept-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.order-action-hint,
+.order-action-note {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.order-action-note {
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-stage);
+}
+
+.order-confirm-card,
+.order-status-panel {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-focus);
+  border-radius: 12px;
+  background: var(--surface-sleeve);
+}
+
+.order-confirm-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+
+.order-confirm-card p,
+.order-status-panel p {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.order-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.order-status-panel.is-pending {
+  border-color: rgba(232, 185, 73, 0.45);
+  background: rgba(232, 185, 73, 0.08);
+}
+
+.order-status-panel.is-open {
+  border-color: rgba(56, 189, 148, 0.4);
+  background: rgba(56, 189, 148, 0.08);
+}
+
+.order-status-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--ink-primary);
+  font-size: 14px;
+}
+
+.negotiations-stage {
+  max-width: 1020px;
+  margin: 36px auto 72px;
+  animation: reveal-stage 260ms var(--ease-out);
+}
+
+.negotiations-header {
+  margin-bottom: 22px;
+}
+
+.negotiations-header h1 {
+  margin: 0;
+  font-size: clamp(24px, 3.2vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.negotiations-header p {
+  margin: 8px 0 0;
+  color: var(--ink-secondary);
+  font-size: 14px;
+}
+
+.negotiations-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.negotiations-tab-btn {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--ink-secondary);
+  background: var(--surface-sleeve);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms var(--ease-out), color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out);
+}
+
+.negotiations-tab-btn.is-active {
+  border-color: var(--accent-crimson);
+  color: #ffffff;
+  background: var(--accent-crimson);
+}
+
+.negotiation-card-title {
+  margin: 2px 0 0;
+  color: var(--ink-primary);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.negotiation-deadline-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  color: var(--rarity-amber);
+  font-size: 12.5px;
+  font-weight: 500;
+}

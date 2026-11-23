@@ -92,12 +92,17 @@ export default function CatalogPage() {
 
           <div className="topbar-actions">
             {user ? (
-              <div className="topbar-user-pill">
-                <span className="topbar-user-name">{user.name}</span>
-                <button className="topbar-logout-btn" type="button" onClick={logout}>
-                  Sair
-                </button>
-              </div>
+              <>
+                <Link className="topbar-nav-link" href="/negociacoes">
+                  Negociações
+                </Link>
+                <div className="topbar-user-pill">
+                  <span className="topbar-user-name">{user.name}</span>
+                  <button className="topbar-logout-btn" type="button" onClick={logout}>
+                    Sair
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <Link className="topbar-nav-link" href="/entrar">

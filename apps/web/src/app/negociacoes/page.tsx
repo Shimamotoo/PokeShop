@@ -1,0 +1,304 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import {
+  CardConditionLabels,
+  OrderStatusLabels,
+  type ListOrdersResponse,
+  type OrderView,
+} from '@pokeshop/shared';
+import { apiClient } from '@/lib/api-client';
+import { formatBrlFromCents, formatDatePtBr } from '@/lib/format';
+import { useAuth } from '@/features/auth/use-auth';
+
+type NegotiationsTab = 'seller' | 'buyer';
+
+export default function NegotiationsPage() {
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState<NegotiationsTab>('seller');
+  const [orders, setOrders] = useState<OrderView[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const loadOrders = useCallback(async (signal?: AbortSignal) => {
+    setIsLoadingOrders(true);
+    setError(null);
+    try {
+      const response = await apiClient<ListOrdersResponse>('/orders?role=all', {
+        signal,
+      });
+      setOrders(response.items);
+    } catch (loadErr) {
+      if (!signal?.aborted) {
+        setError(
+          loadErr instanceof Error
+            ? loadErr.message
+            : 'Não foi possível carregar suas negociações.'
+        );
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setIsLoadingOrders(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const controller = new AbortController();
+    void loadOrders(controller.signal);
+    return () => controller.abort();
+  }, [user, loadOrders]);
+
+  async function handleSellerDecision(orderId: string, decision: 'confirm' | 'decline') {
+    setBusyOrderId(orderId);
+    setError(null);
+    setFeedback(null);
+    try {
+      await apiClient<OrderView>(`/orders/${encodeURIComponent(orderId)}/${decision}`, {
+        method: 'POST',
+      });
+      setFeedback(
+        decision === 'confirm'
+          ? 'Disponibilidade confirmada! A negociação foi aberta.'
+          : 'Solicitação recusada. O exemplar voltou a ficar disponível na loja.'
+      );
+      await loadOrders();
+    } catch (decisionErr) {
+      setError(
+        decisionErr instanceof Error
+          ? decisionErr.message
+          : 'Não foi possível atualizar a solicitação.'
+      );
+    } finally {
+      setBusyOrderId(null);
+    }
+  }
+
+  const sellerOrders = user ? orders.filter((order) => order.sellerId === user.id) : [];
+  const buyerOrders = user ? orders.filter((order) => order.buyerId === user.id) : [];
+  const visibleOrders = activeTab === 'seller' ? sellerOrders : buyerOrders;
+
+  return (
+    <div className="detail-shell">
+      <header className="store-topbar">
+        <div className="store-topbar-inner">
+          <Link className="wordmark" href="/" aria-label="PokeShop, início">
+            <span className="wordmark-mark" aria-hidden="true">
+              P
+            </span>
+            <span>PokeShop</span>
+          </Link>
+          <div className="topbar-actions">
+            <Link className="back-link" href="/">
+              <ArrowLeft size={15} aria-hidden="true" />
+              <span>Voltar para a vitrine</span>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="catalog-shell">
+        <section className="negotiations-stage">
+          <div className="negotiations-header">
+            <div>
+              <h1>Minhas negociações</h1>
+              <p>
+                Acompanhe solicitações recebidas nos seus anúncios e reservas que você
+                iniciou por preço fixo.
+              </p>
+            </div>
+          </div>
+
+          {!isAuthLoading && !user ? (
+            <div className="catalog-message">
+              <h2>Entre para acompanhar suas negociações</h2>
+              <p>
+                <Link className="auth-inline-link" href="/entrar">
+                  Entre na sua conta
+                </Link>{' '}
+                ou{' '}
+                <Link className="auth-inline-link" href="/cadastro">
+                  crie um cadastro
+                </Link>{' '}
+                para visualizar suas reservas e solicitações de compra.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div
+                className="negotiations-tabs"
+                role="tablist"
+                aria-label="Filtrar negociações por papel"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'seller'}
+                  className={`negotiations-tab-btn ${
+                    activeTab === 'seller' ? 'is-active' : ''
+                  }`}
+                  onClick={() => setActiveTab('seller')}
+                >
+                  Solicitações recebidas ({sellerOrders.length})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'buyer'}
+                  className={`negotiations-tab-btn ${
+                    activeTab === 'buyer' ? 'is-active' : ''
+                  }`}
+                  onClick={() => setActiveTab('buyer')}
+                >
+                  Minhas reservas ({buyerOrders.length})
+                </button>
+              </div>
+
+              {feedback && (
+                <div className="listing-feedback-banner" role="status">
+                  <span>{feedback}</span>
+                </div>
+              )}
+
+              {error && (
+                <div className="auth-alert order-inline-feedback" role="alert">
+                  {error}
+                </div>
+              )}
+
+              {isLoadingOrders && orders.length === 0 ? (
+                <div className="catalog-message" role="status">
+                  <h3>Carregando negociações…</h3>
+                </div>
+              ) : visibleOrders.length === 0 ? (
+                <div className="catalog-message">
+                  <h3>
+                    {activeTab === 'seller'
+                      ? 'Nenhuma solicitação recebida até o momento'
+                      : 'Você ainda não reservou nenhum exemplar'}
+                  </h3>
+                  <p>
+                    {activeTab === 'seller'
+                      ? 'Quando um comprador reservar um anúncio seu a preço fixo, ele aparecerá aqui para confirmação.'
+                      : 'Explore o catálogo para encontrar exemplares disponíveis por preço fixo.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="listings-list">
+                  {visibleOrders.map((order) => (
+                    <article key={order.id} className="listing-row-card">
+                      <div className="listing-row-main">
+                        <div className="listing-row-badges">
+                          <span
+                            className={`listing-status-chip status-chip-${order.status.toLowerCase()}`}
+                          >
+                            {OrderStatusLabels[order.status]}
+                          </span>
+                          <span
+                            className={`condition-badge condition-${order.listing.condition.toLowerCase()}`}
+                          >
+                            {CardConditionLabels[order.listing.condition]}
+                          </span>
+                          <span className="listing-meta-pill">
+                            {order.listing.card.setName} • Nº{' '}
+                            {order.listing.card.cardNumber}
+                          </span>
+                        </div>
+
+                        <h2 className="negotiation-card-title">
+                          {order.listing.card.name}
+                        </h2>
+
+                        <p className="listing-row-seller">
+                          {activeTab === 'seller' ? (
+                            <>
+                              Comprador: <strong>{order.buyer.name}</strong>
+                            </>
+                          ) : (
+                            <>
+                              Vendedor: <strong>{order.seller.name}</strong>
+                            </>
+                          )}
+                        </p>
+
+                        {order.status === 'AGUARDANDO_CONFIRMACAO' && (
+                          <p className="negotiation-deadline-note">
+                            <Clock size={14} aria-hidden="true" />
+                            <span>
+                              {activeTab === 'seller'
+                                ? `Aguardando sua confirmação${
+                                    order.expiresAt
+                                      ? ` até ${formatDatePtBr(order.expiresAt)}`
+                                      : ''
+                                  }`
+                                : `Aguardando confirmação do vendedor${
+                                    order.expiresAt
+                                      ? ` até ${formatDatePtBr(order.expiresAt)}`
+                                      : ''
+                                  } • sem cancelamento pelo comprador`}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="listing-row-aside">
+                        <div className="listing-price-block">
+                          <span className="listing-sale-mode">Preço fixo</span>
+                          <strong className="listing-price-value">
+                            {formatBrlFromCents(order.listing.priceInCents)}
+                          </strong>
+                        </div>
+
+                        <div className="listing-row-actions">
+                          <Link
+                            className="listing-view-link"
+                            href={`/listings/${encodeURIComponent(order.listingId)}`}
+                          >
+                            Ver anúncio
+                          </Link>
+
+                          {activeTab === 'seller' &&
+                            order.status === 'AGUARDANDO_CONFIRMACAO' && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="order-accept-btn"
+                                  onClick={() =>
+                                    handleSellerDecision(order.id, 'confirm')
+                                  }
+                                  disabled={busyOrderId === order.id}
+                                >
+                                  <CheckCircle2 size={14} aria-hidden="true" />
+                                  <span>Confirmar</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="listing-cancel-btn"
+                                  onClick={() =>
+                                    handleSellerDecision(order.id, 'decline')
+                                  }
+                                  disabled={busyOrderId === order.id}
+                                >
+                                  <XCircle size={14} aria-hidden="true" />
+                                  <span>Recusar</span>
+                                </button>
+                              </>
+                            )}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}

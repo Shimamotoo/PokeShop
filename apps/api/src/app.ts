@@ -14,10 +14,15 @@ import {
   listingsRoutes,
   type ListingsRoutesOptions,
 } from './modules/listings/listings.routes.js';
+import {
+  ordersRoutes,
+  type OrdersRoutesOptions,
+} from './modules/orders/orders.routes.js';
 
 export type BuildAppOptions = {
   auth?: AuthRoutesOptions;
   listings?: ListingsRoutesOptions;
+  orders?: OrdersRoutesOptions;
   logger?: boolean;
 };
 
@@ -41,6 +46,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   app.register(catalogRoutes);
   app.register(authRoutes, options.auth ?? {});
   app.register(listingsRoutes, options.listings ?? {});
+  app.register(ordersRoutes, options.orders ?? {});
 
   return app;
 }

@@ -127,6 +127,19 @@ export const listingCardSummarySchema = z.object({
   imageUrl: z.string().url().nullable(),
 });
 
+export const listingActiveOrderSchema = z.object({
+  id: z.string().uuid(),
+  buyerId: z.string().uuid(),
+  sellerId: z.string().uuid(),
+  buyerName: z.string(),
+  status: listingStatusSchema,
+  createdAt: z.string(),
+  confirmedAt: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+});
+
+export type ListingActiveOrderView = z.infer<typeof listingActiveOrderSchema>;
+
 export const listingResponseSchema = z.object({
   id: z.string().uuid(),
   cardId: z.string().uuid(),
@@ -144,6 +157,7 @@ export const listingResponseSchema = z.object({
   card: listingCardSummarySchema,
   seller: listingSellerSchema,
   photos: z.array(listingPhotoSchema),
+  activeOrder: listingActiveOrderSchema.nullable().optional(),
 });
 
 export type ListingView = z.infer<typeof listingResponseSchema>;

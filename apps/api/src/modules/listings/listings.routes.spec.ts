@@ -212,6 +212,8 @@ describe('Rotas HTTP de anúncios de preço fixo (/listings)', () => {
 
     if (usePostgresTestDb) {
       const { prisma } = await import('@pokeshop/database');
+      await prisma.chatMessage.deleteMany();
+      await prisma.chatRoom.deleteMany();
       await prisma.postPhoto.deleteMany();
       await prisma.post.deleteMany();
       await prisma.listingPhoto.deleteMany();
