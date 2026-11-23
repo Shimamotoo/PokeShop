@@ -7,6 +7,7 @@ import {
 } from 'fastify-type-provider-zod';
 import prismaPlugin from './plugins/prisma.plugin.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { catalogRoutes } from './modules/catalog/catalog.routes.js';
 
 export function buildApp() {
   const app = Fastify({
@@ -24,6 +25,7 @@ export function buildApp() {
 
   // Rotas de Domínio
   app.register(healthRoutes);
+  app.register(catalogRoutes);
 
   return app;
 }

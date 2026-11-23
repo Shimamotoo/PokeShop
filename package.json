@@ -7,6 +7,7 @@
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "test": "turbo test",
+    "seed:catalog": "pnpm --filter @pokeshop/api seed:catalog",
     "db:generate": "turbo db:generate",
     "clean": "turbo clean"
   },

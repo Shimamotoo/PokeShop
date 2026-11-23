@@ -4,9 +4,9 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] O catálogo local apresenta nome, coleção, número e raridade para cartas em PT-BR.
-- [ ] Um visitante consegue navegar, pesquisar e abrir os detalhes disponíveis de uma Carta de catálogo sem login.
-- [ ] O catálogo é abastecido pela integração externa TCGdex; os testes exercitam o comportamento HTTP com banco de teste e substituto da API externa.
-- [ ] A aplicação é utilizável em telas desktop e celular.
+- [x] O catálogo local apresenta nome, coleção, número e raridade para cartas em PT-BR.
+- [x] Um visitante consegue navegar, pesquisar e abrir os detalhes disponíveis de uma Carta de catálogo sem login.
+- [x] O catálogo é abastecido pela integração externa TCGdex; os testes exercitam o comportamento HTTP com banco de teste e substituto da API externa.
+- [x] A aplicação é utilizável em telas desktop e celular.

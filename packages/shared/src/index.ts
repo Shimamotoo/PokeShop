@@ -2,3 +2,4 @@ export * from './constants/order-status.js';
 export * from './constants/conditions.js';
 export * from './schemas/auth.schema.js';
 export * from './schemas/listing.schema.js';
+export * from './schemas/catalog.schema.js';
