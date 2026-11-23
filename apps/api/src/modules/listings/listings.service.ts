@@ -3,9 +3,11 @@ import {
   MAX_LISTING_PHOTOS,
   MAX_PHOTO_SIZE_BYTES,
   MIN_LISTING_PHOTOS,
+  RESERVATION_TIMEOUT_MS,
   type AllowedPhotoMimeType,
   type CreateListingInput,
   type ListListingsQuery,
+  type ListingActiveOrderView,
   type ListingView,
   type PresignUploadRequest,
 } from '@pokeshop/shared';
@@ -31,7 +33,8 @@ export class ListingError extends Error {
 
 export async function toListingView(
   listing: StoredListingRecord,
-  s3Storage: S3StorageProvider
+  s3Storage: S3StorageProvider,
+  requesterUserId: string | null = null
 ): Promise<ListingView> {
   const photos = await Promise.all(
     listing.photos.map(async (photo) => {
@@ -44,6 +47,33 @@ export async function toListingView(
       };
     })
   );
+
+  const canViewActiveOrder =
+    Boolean(listing.activeOrder) &&
+    requesterUserId !== null &&
+    (requesterUserId === listing.sellerId ||
+      requesterUserId === listing.activeOrder?.buyerId);
+
+  let activeOrder: ListingActiveOrderView | null = null;
+  if (canViewActiveOrder && listing.activeOrder) {
+    activeOrder = {
+      id: listing.activeOrder.id,
+      buyerId: listing.activeOrder.buyerId,
+      sellerId: listing.activeOrder.sellerId,
+      buyerName: listing.activeOrder.buyer.name,
+      status: listing.activeOrder.status,
+      createdAt: listing.activeOrder.createdAt.toISOString(),
+      confirmedAt: listing.activeOrder.confirmedAt
+        ? listing.activeOrder.confirmedAt.toISOString()
+        : null,
+      expiresAt:
+        listing.activeOrder.status === 'AGUARDANDO_CONFIRMACAO'
+          ? new Date(
+              listing.activeOrder.createdAt.getTime() + RESERVATION_TIMEOUT_MS
+            ).toISOString()
+          : null,
+    };
+  }
 
   return {
     id: listing.id,
@@ -65,6 +95,7 @@ export async function toListingView(
       name: listing.seller.name,
     },
     photos,
+    activeOrder,
   };
 }
 
@@ -167,14 +198,17 @@ export async function getListingDetails(
   }
 
   const isOwner = requesterUserId !== null && listing.sellerId === requesterUserId;
+  const isParticipant =
+    isOwner ||
+    (requesterUserId !== null && listing.activeOrder?.buyerId === requesterUserId);
   const isPrivateOrCancelled =
     listing.seller.profileVisibility === 'PRIVATE' || listing.status === 'CANCELADO';
 
-  if (isPrivateOrCancelled && !isOwner) {
+  if (isPrivateOrCancelled && !isParticipant) {
     throw new ListingError('Você não tem permissão para visualizar este anúncio.', 403);
   }
 
-  return toListingView(listing, s3Storage);
+  return toListingView(listing, s3Storage, requesterUserId);
 }
 
 export async function authorizeAndSignMediaRead(

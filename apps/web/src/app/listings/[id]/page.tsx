@@ -1,16 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ShieldCheck, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Lock,
+  ShieldCheck,
+  ShoppingBag,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import {
   CardConditionLabels,
+  OrderStatusLabels,
   type ListingView,
+  type OrderView,
 } from '@pokeshop/shared';
 import { apiClient } from '@/lib/api-client';
+import { formatBrlFromCents, formatDatePtBr } from '@/lib/format';
 import { useAuth } from '@/features/auth/use-auth';
-import { formatBrlFromCents } from '@/app/catalog/[tcgdexId]/page';
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,33 +31,98 @@ export default function ListingDetailPage() {
   const [listing, setListing] = useState<ListingView | null>(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [isCancelling, setIsCancelling] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [isConfirmingReserveStep, setIsConfirmingReserveStep] = useState(false);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+
+  const loadListing = useCallback(
+    async (signal?: AbortSignal) => {
+      const data = await apiClient<ListingView>(`/listings/${encodeURIComponent(id)}`, {
+        signal,
+      });
+      setListing(data);
+      setSelectedPhotoIndex(0);
+    },
+    [id]
+  );
 
   useEffect(() => {
     const controller = new AbortController();
-    apiClient<ListingView>(`/listings/${encodeURIComponent(id)}`, {
-      signal: controller.signal,
-    })
-      .then((data) => {
-        setListing(data);
-        setSelectedPhotoIndex(0);
-      })
-      .catch((requestError: unknown) => {
-        if (!controller.signal.aborted) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : 'Anúncio não encontrado.'
-          );
-        }
-      });
+    loadListing(controller.signal).catch((requestError: unknown) => {
+      if (!controller.signal.aborted) {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : 'Anúncio não encontrado.'
+        );
+      }
+    });
 
     return () => controller.abort();
-  }, [id]);
+  }, [loadListing]);
+
+  async function handleReservePurchase() {
+    if (!listing) return;
+    setActionError(null);
+    setActionFeedback(null);
+    setIsSubmittingAction(true);
+
+    try {
+      await apiClient<OrderView>('/orders', {
+        method: 'POST',
+        body: JSON.stringify({ listingId: listing.id }),
+      });
+      setIsConfirmingReserveStep(false);
+      await loadListing();
+      setActionFeedback(
+        'Reserva confirmada! O exemplar foi bloqueado e aguarda confirmação do vendedor.'
+      );
+    } catch (reserveErr) {
+      setActionError(
+        reserveErr instanceof Error
+          ? reserveErr.message
+          : 'Não foi possível iniciar a reserva deste exemplar.'
+      );
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  }
+
+  async function handleSellerDecision(decision: 'confirm' | 'decline') {
+    if (!listing?.activeOrder) return;
+    setActionError(null);
+    setActionFeedback(null);
+    setIsSubmittingAction(true);
+
+    try {
+      await apiClient<OrderView>(
+        `/orders/${encodeURIComponent(listing.activeOrder.id)}/${decision}`,
+        {
+          method: 'POST',
+        }
+      );
+      await loadListing();
+      setActionFeedback(
+        decision === 'confirm'
+          ? 'Disponibilidade confirmada! A negociação está aberta.'
+          : 'Solicitação recusada. O exemplar retornou para a vitrine como disponível.'
+      );
+    } catch (decisionErr) {
+      setActionError(
+        decisionErr instanceof Error
+          ? decisionErr.message
+          : 'Não foi possível processar a resposta da reserva.'
+      );
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  }
 
   async function handleCancel() {
     if (!listing) return;
-    setIsCancelling(true);
+    setActionError(null);
+    setIsSubmittingAction(true);
     try {
       const updated = await apiClient<ListingView>(
         `/listings/${encodeURIComponent(listing.id)}`,
@@ -57,18 +133,21 @@ export default function ListingDetailPage() {
       setListing(updated);
       router.push(`/catalog/${encodeURIComponent(updated.card.tcgdexId)}`);
     } catch (cancelErr) {
-      setError(
+      setActionError(
         cancelErr instanceof Error
           ? cancelErr.message
           : 'Não foi possível cancelar o anúncio.'
       );
     } finally {
-      setIsCancelling(false);
+      setIsSubmittingAction(false);
     }
   }
 
   const activePhoto = listing?.photos[selectedPhotoIndex] ?? listing?.photos[0];
-  const isOwner = user && listing && user.id === listing.sellerId;
+  const isOwner = Boolean(user && listing && user.id === listing.sellerId);
+  const isActiveBuyer = Boolean(
+    user && listing?.activeOrder && user.id === listing.activeOrder.buyerId
+  );
 
   return (
     <div className="detail-shell">
@@ -81,6 +160,11 @@ export default function ListingDetailPage() {
             <span>PokeShop</span>
           </Link>
           <div className="topbar-actions">
+            {user && (
+              <Link className="topbar-nav-link" href="/negociacoes">
+                Negociações
+              </Link>
+            )}
             {listing ? (
               <Link
                 className="back-link"
@@ -168,8 +252,211 @@ export default function ListingDetailPage() {
                     {formatBrlFromCents(listing.priceInCents)}
                   </strong>
                 </div>
-                <span className="listing-status-chip">{listing.status}</span>
+                <span
+                  className={`listing-status-chip status-chip-${listing.status.toLowerCase()}`}
+                >
+                  {OrderStatusLabels[listing.status]}
+                </span>
               </div>
+
+              {actionFeedback && (
+                <div
+                  className="listing-feedback-banner order-inline-feedback"
+                  role="status"
+                >
+                  <span>{actionFeedback}</span>
+                </div>
+              )}
+
+              {actionError && (
+                <div className="auth-alert order-inline-feedback" role="alert">
+                  {actionError}
+                </div>
+              )}
+
+              {listing.status === 'DISPONIVEL' && listing.saleType === 'PRECO_FIXO' && (
+                <div className="order-action-panel">
+                  {!user ? (
+                    <p className="order-action-note">
+                      <Link className="auth-inline-link" href="/entrar">
+                        Entre na sua conta
+                      </Link>{' '}
+                      ou{' '}
+                      <Link className="auth-inline-link" href="/cadastro">
+                        cadastre-se
+                      </Link>{' '}
+                      para reservar este exemplar por preço fixo.
+                    </p>
+                  ) : isOwner ? (
+                    <div className="listing-owner-controls">
+                      <button
+                        type="button"
+                        className="listing-cancel-btn"
+                        onClick={handleCancel}
+                        disabled={isSubmittingAction}
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                        <span>
+                          {isSubmittingAction
+                            ? 'Cancelando anúncio…'
+                            : 'Excluir / Cancelar anúncio'}
+                        </span>
+                      </button>
+                    </div>
+                  ) : !isConfirmingReserveStep ? (
+                    <div className="order-buy-box">
+                      <button
+                        type="button"
+                        className="order-primary-btn"
+                        onClick={() => {
+                          setActionError(null);
+                          setIsConfirmingReserveStep(true);
+                        }}
+                      >
+                        <ShoppingBag size={16} aria-hidden="true" />
+                        <span>Comprar por preço fixo</span>
+                      </button>
+                      <p className="order-action-hint">
+                        Reserva o exemplar com exclusividade por até 30 dias aguardando a
+                        confirmação do vendedor.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="order-confirm-card">
+                      <h3>Confirmar solicitação de compra</h3>
+                      <p>
+                        Ao confirmar, o exemplar fica bloqueado para outros compradores.
+                        <strong>
+                          {' '}
+                          Você não poderá cancelar a reserva após o envio
+                        </strong>{' '}
+                        — caso o vendedor não responda em 30 dias, o anúncio volta
+                        automaticamente para a loja.
+                      </p>
+                      <div className="order-confirm-actions">
+                        <button
+                          type="button"
+                          className="order-primary-btn"
+                          onClick={handleReservePurchase}
+                          disabled={isSubmittingAction}
+                        >
+                          {isSubmittingAction
+                            ? 'Reservando exemplar…'
+                            : 'Confirmar reserva'}
+                        </button>
+                        <button
+                          type="button"
+                          className="order-secondary-btn"
+                          onClick={() => setIsConfirmingReserveStep(false)}
+                          disabled={isSubmittingAction}
+                        >
+                          Voltar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {listing.status === 'AGUARDANDO_CONFIRMACAO' && (
+                <div className="order-status-panel is-pending">
+                  {isOwner && listing.activeOrder ? (
+                    <>
+                      <div className="order-status-heading">
+                        <Clock size={16} aria-hidden="true" />
+                        <strong>Solicitação de compra recebida</strong>
+                      </div>
+                      <p>
+                        Comprador: <strong>{listing.activeOrder.buyerName}</strong>.
+                        {listing.activeOrder.expiresAt
+                          ? ` Responda até ${formatDatePtBr(listing.activeOrder.expiresAt)} para não expirar automaticamente.`
+                          : ''}
+                      </p>
+                      <div className="order-confirm-actions">
+                        <button
+                          type="button"
+                          className="order-accept-btn"
+                          onClick={() => handleSellerDecision('confirm')}
+                          disabled={isSubmittingAction}
+                        >
+                          <CheckCircle2 size={15} aria-hidden="true" />
+                          <span>
+                            {isSubmittingAction
+                              ? 'Processando…'
+                              : 'Confirmar disponibilidade'}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className="listing-cancel-btn"
+                          onClick={() => handleSellerDecision('decline')}
+                          disabled={isSubmittingAction}
+                        >
+                          <XCircle size={15} aria-hidden="true" />
+                          <span>Recusar solicitação</span>
+                        </button>
+                      </div>
+                    </>
+                  ) : isActiveBuyer && listing.activeOrder ? (
+                    <>
+                      <div className="order-status-heading">
+                        <Clock size={16} aria-hidden="true" />
+                        <strong>Você reservou este exemplar</strong>
+                      </div>
+                      <p>
+                        Aguardando o vendedor confirmar a disponibilidade
+                        {listing.activeOrder.expiresAt
+                          ? ` (prazo limite: ${formatDatePtBr(listing.activeOrder.expiresAt)})`
+                          : ''}
+                        . O comprador não pode cancelar após iniciar a reserva.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="order-status-heading">
+                        <Lock size={16} aria-hidden="true" />
+                        <strong>Exemplar reservado no momento</strong>
+                      </div>
+                      <p>
+                        Outro colecionador iniciou a compra por preço fixo e aguarda a
+                        confirmação do vendedor.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {listing.status === 'NEGOCIACAO_ABERTA' && (
+                <div
+                  className={`order-status-panel ${
+                    isOwner || isActiveBuyer ? 'is-open' : ''
+                  }`}
+                >
+                  {isOwner || isActiveBuyer ? (
+                    <>
+                      <div className="order-status-heading">
+                        <CheckCircle2 size={16} aria-hidden="true" />
+                        <strong>Disponibilidade confirmada • Negociação aberta</strong>
+                      </div>
+                      <p>
+                        Acompanhe o status desta negociação em{' '}
+                        <Link className="auth-inline-link" href="/negociacoes">
+                          Minhas negociações
+                        </Link>
+                        .
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="order-status-heading">
+                        <Lock size={16} aria-hidden="true" />
+                        <strong>Exemplar em negociação</strong>
+                      </div>
+                      <p>Este exemplar já está em negociação entre comprador e vendedor.</p>
+                    </>
+                  )}
+                </div>
+              )}
 
               <dl className="detail-facts">
                 <div>
@@ -200,24 +487,6 @@ export default function ListingDetailPage() {
                 <div className="detail-note">
                   <strong>Observações do vendedor:</strong>
                   <p style={{ margin: '6px 0 0' }}>{listing.description}</p>
-                </div>
-              )}
-
-              {isOwner && listing.status === 'DISPONIVEL' && (
-                <div className="listing-owner-controls">
-                  <button
-                    type="button"
-                    className="listing-cancel-btn"
-                    onClick={handleCancel}
-                    disabled={isCancelling}
-                  >
-                    <Trash2 size={15} aria-hidden="true" />
-                    <span>
-                      {isCancelling
-                        ? 'Cancelando anúncio…'
-                        : 'Excluir / Cancelar anúncio'}
-                    </span>
-                  </button>
                 </div>
               )}
             </div>

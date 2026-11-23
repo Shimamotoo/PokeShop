@@ -20,6 +20,16 @@ describe('Rotas HTTP do catálogo', () => {
       import('@pokeshop/database'),
     ]);
 
+    await prisma.chatMessage.deleteMany();
+    await prisma.chatRoom.deleteMany();
+    await prisma.postPhoto.deleteMany();
+    await prisma.post.deleteMany();
+    await prisma.listingPhoto.deleteMany();
+    await prisma.proposal.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.listing.deleteMany();
+    await prisma.collectionItem.deleteMany();
+    await prisma.collection.deleteMany();
     await prisma.card.deleteMany();
 
     const cardsById: Record<string, unknown> = {

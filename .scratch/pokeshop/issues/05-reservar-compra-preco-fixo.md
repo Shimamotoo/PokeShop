@@ -4,12 +4,12 @@
 
 **Blocked by:** 03: Publicar anúncio de preço fixo.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Um comprador autenticado inicia a compra e o anúncio transita de `DISPONIVEL` para `AGUARDANDO_CONFIRMACAO`.
-- [ ] Enquanto aguarda resposta, o Exemplar fica bloqueado para outros compradores e para novas Propostas incompatíveis.
-- [ ] O vendedor consegue confirmar disponibilidade, levando o anúncio a `NEGOCIACAO_ABERTA`, ou recusar, retornando-o a `DISPONIVEL`.
-- [ ] Se o vendedor não responder em 30 dias, a solicitação expira e o anúncio retorna a `DISPONIVEL` sem ser apagado.
-- [ ] O comprador não consegue cancelar depois de iniciar a reserva.
-- [ ] Requisições concorrentes não conseguem reservar o mesmo Exemplar; a regra é verificada por testes HTTP concorrentes contra banco de teste.
-- [ ] Testes com relógio controlado verificam o timeout e a liberação do Exemplar.
+- [x] Um comprador autenticado inicia a compra e o anúncio transita de `DISPONIVEL` para `AGUARDANDO_CONFIRMACAO`.
+- [x] Enquanto aguarda resposta, o Exemplar fica bloqueado para outros compradores e para novas Propostas incompatíveis.
+- [x] O vendedor consegue confirmar disponibilidade, levando o anúncio a `NEGOCIACAO_ABERTA`, ou recusar, retornando-o a `DISPONIVEL`.
+- [x] Se o vendedor não responder em 30 dias, a solicitação expira e o anúncio retorna a `DISPONIVEL` sem ser apagado.
+- [x] O comprador não consegue cancelar depois de iniciar a reserva.
+- [x] Requisições concorrentes não conseguem reservar o mesmo Exemplar; a regra é verificada por testes HTTP concorrentes contra banco de teste.
+- [x] Testes com relógio controlado verificam o timeout e a liberação do Exemplar.

@@ -18,6 +18,7 @@ import {
   type PresignUploadResponse,
 } from '@pokeshop/shared';
 import { apiClient } from '@/lib/api-client';
+import { formatBrlFromCents } from '@/lib/format';
 import { useAuth } from '@/features/auth/use-auth';
 
 type StagedPhoto = {
@@ -33,13 +34,6 @@ const CONDITION_DESCRIPTIONS: Record<CardConditionType, string> = {
   MARCAS_DE_USO: 'Desgaste visível de manuseio ou jogo, sem danos estruturais.',
   DANIFICADA: 'Vincos, dobras, manchas, marcas de umidade ou rasgos.',
 };
-
-export function formatBrlFromCents(cents: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(cents / 100);
-}
 
 export default function CatalogCardPage() {
   const { tcgdexId } = useParams<{ tcgdexId: string }>();
@@ -247,6 +241,11 @@ export default function CatalogCardPage() {
             <span>PokeShop</span>
           </Link>
           <div className="topbar-actions">
+            {user && (
+              <Link className="topbar-nav-link" href="/negociacoes">
+                Negociações
+              </Link>
+            )}
             <Link className="back-link" href="/">
               <ArrowLeft size={15} aria-hidden="true" />
               <span>Voltar para a vitrine</span>
