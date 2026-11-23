@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import type { CatalogSearchResponse } from '@pokeshop/shared';
 import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/features/auth/use-auth';
 
 const SKELETON_SLOTS = Array.from({ length: 12 }, (_, index) => index);
 
 export default function CatalogPage() {
+  const { user, logout } = useAuth();
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -89,9 +91,23 @@ export default function CatalogPage() {
           </form>
 
           <div className="topbar-actions">
-            <a className="source-link" href="https://tcgdex.net" target="_blank" rel="noreferrer">
-              Fonte TCGdex
-            </a>
+            {user ? (
+              <div className="topbar-user-pill">
+                <span className="topbar-user-name">{user.name}</span>
+                <button className="topbar-logout-btn" type="button" onClick={logout}>
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link className="topbar-nav-link" href="/entrar">
+                  Entrar
+                </Link>
+                <Link className="topbar-cta" href="/cadastro">
+                  Criar conta
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

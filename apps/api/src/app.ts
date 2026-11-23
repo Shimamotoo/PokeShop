@@ -6,12 +6,19 @@ import {
   ZodTypeProvider,
 } from 'fastify-type-provider-zod';
 import prismaPlugin from './plugins/prisma.plugin.js';
+import authPlugin from './plugins/auth.plugin.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { catalogRoutes } from './modules/catalog/catalog.routes.js';
+import { authRoutes, type AuthRoutesOptions } from './modules/auth/auth.routes.js';
 
-export function buildApp() {
+export type BuildAppOptions = {
+  auth?: AuthRoutesOptions;
+  logger?: boolean;
+};
+
+export function buildApp(options: BuildAppOptions = {}) {
   const app = Fastify({
-    logger: true,
+    logger: options.logger ?? true,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);
@@ -22,10 +29,12 @@ export function buildApp() {
   });
 
   app.register(prismaPlugin);
+  app.register(authPlugin);
 
   // Rotas de Domínio
   app.register(healthRoutes);
   app.register(catalogRoutes);
+  app.register(authRoutes, options.auth ?? {});
 
   return app;
 }
