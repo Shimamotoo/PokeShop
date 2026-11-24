@@ -247,9 +247,17 @@ export default function ListingDetailPage() {
 
               <div className="listing-detail-price-card">
                 <div>
-                  <span className="listing-sale-mode">Modalidade Preço Fixo</span>
+                  <span className="listing-sale-mode">
+                    {listing.saleType === 'PROPOSTAS'
+                      ? 'Modalidade por Propostas • Valor inicial mínimo'
+                      : 'Modalidade Preço Fixo'}
+                  </span>
                   <strong className="listing-detail-price">
-                    {formatBrlFromCents(listing.priceInCents)}
+                    {formatBrlFromCents(
+                      listing.saleType === 'PROPOSTAS'
+                        ? (listing.startingPriceInCents ?? listing.priceInCents)
+                        : listing.priceInCents
+                    )}
                   </strong>
                 </div>
                 <span
@@ -354,6 +362,63 @@ export default function ListingDetailPage() {
                         </button>
                       </div>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {listing.status === 'DISPONIVEL' && listing.saleType === 'PROPOSTAS' && (
+                <div className="order-action-panel">
+                  {isOwner ? (
+                    <div className="listing-owner-controls">
+                      <button
+                        type="button"
+                        className="listing-cancel-btn"
+                        onClick={handleCancel}
+                        disabled={isSubmittingAction}
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                        <span>
+                          {isSubmittingAction
+                            ? 'Cancelando anúncio…'
+                            : 'Excluir / Cancelar anúncio'}
+                        </span>
+                      </button>
+                      <p className="order-action-hint">
+                        Ao excluir o anúncio disponível, o status passa para{' '}
+                        <strong>Cancelado</strong> e todas as propostas pendentes são
+                        descartadas.
+                      </p>
+                    </div>
+                  ) : !user ? (
+                    <p className="order-action-note">
+                      Este exemplar está aberto para <strong>Propostas</strong> acima de{' '}
+                      <strong>
+                        {formatBrlFromCents(
+                          listing.startingPriceInCents ?? listing.priceInCents
+                        )}
+                      </strong>
+                      , sem prazo fixo de encerramento. Visitantes podem consultar os
+                      detalhes livremente;{' '}
+                      <Link className="auth-inline-link" href="/entrar">
+                        entre na sua conta
+                      </Link>{' '}
+                      ou{' '}
+                      <Link className="auth-inline-link" href="/cadastro">
+                        cadastre-se
+                      </Link>{' '}
+                      para participar de negociações.
+                    </p>
+                  ) : (
+                    <p className="order-action-note">
+                      Anúncio aberto para <strong>Propostas</strong> estritamente acima de{' '}
+                      <strong>
+                        {formatBrlFromCents(
+                          listing.startingPriceInCents ?? listing.priceInCents
+                        )}
+                      </strong>
+                      , sem prazo fixo até o vendedor aceitar uma oferta ou excluir o
+                      anúncio.
+                    </p>
                   )}
                 </div>
               )}

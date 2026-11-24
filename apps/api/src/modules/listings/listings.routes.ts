@@ -17,11 +17,11 @@ import {
 } from './listings.repository.js';
 import {
   authorizeAndSignMediaRead,
-  cancelFixedPriceListing,
+  cancelListing,
   getListingDetails,
   ListingError,
   listListings,
-  publishFixedPriceListing,
+  publishListing,
   requestPhotoUploadPresign,
 } from './listings.service.js';
 import {
@@ -144,7 +144,7 @@ export const listingsRoutes: FastifyPluginAsyncZod<ListingsRoutesOptions> = asyn
     },
     async (request, reply) => {
       try {
-        const created = await publishFixedPriceListing(
+        const created = await publishListing(
           request.user.sub,
           request.body,
           repository,
@@ -231,7 +231,7 @@ export const listingsRoutes: FastifyPluginAsyncZod<ListingsRoutesOptions> = asyn
     },
     async (request, reply) => {
       try {
-        const cancelled = await cancelFixedPriceListing(
+        const cancelled = await cancelListing(
           request.params.id,
           request.user.sub,
           repository,

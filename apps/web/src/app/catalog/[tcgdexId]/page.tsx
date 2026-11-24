@@ -8,11 +8,13 @@ import {
   ALLOWED_PHOTO_MIME_TYPES,
   CardCondition,
   CardConditionLabels,
+  ListingSaleTypeLabels,
   MAX_LISTING_PHOTOS,
   MAX_PHOTO_SIZE_BYTES,
   type AllowedPhotoMimeType,
   type CardConditionType,
   type CatalogCard,
+  type ListingSaleType,
   type ListingView,
   type ListListingsResponse,
   type PresignUploadResponse,
@@ -45,6 +47,7 @@ export default function CatalogCardPage() {
   const [isLoadingListings, setIsLoadingListings] = useState(false);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [saleType, setSaleType] = useState<ListingSaleType>('PRECO_FIXO');
   const [priceInput, setPriceInput] = useState('');
   const [condition, setCondition] = useState<CardConditionType>(
     CardCondition.PERFEITO_ESTADO
@@ -169,7 +172,11 @@ export default function CatalogCardPage() {
     const priceInCents = Math.round(normalizedPrice * 100);
 
     if (!Number.isFinite(priceInCents) || priceInCents <= 0) {
-      setFormError('Informe um preço válido maior que zero (ex: 149,90).');
+      setFormError(
+        saleType === 'PROPOSTAS'
+          ? 'Informe um valor inicial mínimo válido maior que zero (ex: 120,00).'
+          : 'Informe um preço válido maior que zero (ex: 149,90).'
+      );
       return;
     }
 
@@ -180,18 +187,31 @@ export default function CatalogCardPage() {
 
     setIsSubmitting(true);
     try {
+      const commonPayload = {
+        cardId: card.id,
+        condition,
+        language: language.trim() || 'PT-BR',
+        edition: edition.trim() || null,
+        description: description.trim() || null,
+        photoKeys: stagedPhotos.map((photo) => photo.s3Key),
+      };
+
+      const payload =
+        saleType === 'PROPOSTAS'
+          ? {
+              ...commonPayload,
+              saleType: 'PROPOSTAS' as const,
+              startingPriceInCents: priceInCents,
+            }
+          : {
+              ...commonPayload,
+              saleType: 'PRECO_FIXO' as const,
+              priceInCents,
+            };
+
       await apiClient<ListingView>('/listings', {
         method: 'POST',
-        body: JSON.stringify({
-          cardId: card.id,
-          saleType: 'PRECO_FIXO',
-          priceInCents,
-          condition,
-          language: language.trim() || 'PT-BR',
-          edition: edition.trim() || null,
-          description: description.trim() || null,
-          photoKeys: stagedPhotos.map((photo) => photo.s3Key),
-        }),
+        body: JSON.stringify(payload),
       });
 
       setPriceInput('');
@@ -199,7 +219,11 @@ export default function CatalogCardPage() {
       setDescription('');
       setStagedPhotos([]);
       setIsFormOpen(false);
-      setActionMessage('Anúncio publicado com sucesso!');
+      setActionMessage(
+        saleType === 'PROPOSTAS'
+          ? 'Anúncio por propostas publicado com sucesso!'
+          : 'Anúncio publicado com sucesso!'
+      );
       await loadListings(card.id);
     } catch (submitErr) {
       setFormError(
@@ -344,7 +368,7 @@ export default function CatalogCardPage() {
                 <div className="listing-drawer-header">
                   <div>
                     <h2 id="publish-listing-heading">
-                      Anunciar exemplar a preço fixo — {card.name}
+                      Anunciar exemplar — {card.name}
                     </h2>
                     <p>
                       Cada anúncio corresponde a 1 exemplar físico real associado a esta
@@ -368,21 +392,70 @@ export default function CatalogCardPage() {
                 )}
 
                 <form className="listing-form" onSubmit={handlePublishListing}>
+                  <fieldset className="condition-fieldset">
+                    <legend>Modalidade de venda</legend>
+                    <div className="sale-type-selector" role="radiogroup" aria-label="Modalidade de venda">
+                      <label
+                        className={`sale-type-option ${
+                          saleType === 'PRECO_FIXO' ? 'is-selected' : ''
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="saleType"
+                          value="PRECO_FIXO"
+                          checked={saleType === 'PRECO_FIXO'}
+                          onChange={() => setSaleType('PRECO_FIXO')}
+                        />
+                        <span className="condition-option-title">Preço Fixo</span>
+                        <span className="condition-option-desc">
+                          Valor fechado à vista. O comprador reserva o exemplar aguardando
+                          sua confirmação.
+                        </span>
+                      </label>
+
+                      <label
+                        className={`sale-type-option ${
+                          saleType === 'PROPOSTAS' ? 'is-selected' : ''
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="saleType"
+                          value="PROPOSTAS"
+                          checked={saleType === 'PROPOSTAS'}
+                          onChange={() => setSaleType('PROPOSTAS')}
+                        />
+                        <span className="condition-option-title">Por Propostas</span>
+                        <span className="condition-option-desc">
+                          Defina um Valor inicial mínimo e receba propostas acima desse piso
+                          sem prazo fixo de encerramento.
+                        </span>
+                      </label>
+                    </div>
+                  </fieldset>
+
                   <div className="listing-form-grid">
                     <div className="auth-field">
-                      <label htmlFor="listing-price">Preço fixo (R$)</label>
+                      <label htmlFor="listing-price">
+                        {saleType === 'PROPOSTAS'
+                          ? 'Valor inicial mínimo (R$)'
+                          : 'Preço fixo (R$)'}
+                      </label>
                       <input
                         id="listing-price"
                         className="auth-input"
                         type="text"
                         inputMode="decimal"
-                        placeholder="Ex: 149,90"
+                        placeholder={saleType === 'PROPOSTAS' ? 'Ex: 120,00' : 'Ex: 149,90'}
                         value={priceInput}
                         onChange={(e) => setPriceInput(e.target.value)}
                         required
                       />
                       <p className="auth-field-hint">
-                        Valor à vista sem regateio na modalidade Preço Fixo.
+                        {saleType === 'PROPOSTAS'
+                          ? 'Compradores só poderão enviar propostas estritamente superiores a este valor.'
+                          : 'Valor à vista sem regateio na modalidade Preço Fixo.'}
                       </p>
                     </div>
 
@@ -515,7 +588,11 @@ export default function CatalogCardPage() {
                       className="auth-submit-btn"
                       disabled={isSubmitting || isUploadingPhoto}
                     >
-                      {isSubmitting ? 'Publicando anúncio…' : 'Publicar anúncio a preço fixo'}
+                      {isSubmitting
+                        ? 'Publicando anúncio…'
+                        : saleType === 'PROPOSTAS'
+                          ? 'Publicar anúncio por propostas'
+                          : 'Publicar anúncio a preço fixo'}
                     </button>
                   </div>
                 </form>
@@ -546,7 +623,7 @@ export default function CatalogCardPage() {
                   <h3>Nenhum exemplar anunciado no momento</h3>
                   <p>
                     Seja o primeiro colecionador a anunciar um exemplar físico de{' '}
-                    <strong>{card.name}</strong> a preço fixo.
+                    <strong>{card.name}</strong> por preço fixo ou propostas.
                   </p>
                 </div>
               ) : (
@@ -562,6 +639,11 @@ export default function CatalogCardPage() {
                             >
                               {CardConditionLabels[item.condition]}
                             </span>
+                            {item.saleType === 'PROPOSTAS' && (
+                              <span className="listing-sale-badge-propostas">
+                                {ListingSaleTypeLabels[item.saleType]}
+                              </span>
+                            )}
                             <span className="listing-meta-pill">{item.language}</span>
                             {item.edition && (
                               <span className="listing-meta-pill">{item.edition}</span>
@@ -583,9 +665,17 @@ export default function CatalogCardPage() {
 
                         <div className="listing-row-aside">
                           <div className="listing-price-block">
-                            <span className="listing-sale-mode">Preço fixo</span>
+                            <span className="listing-sale-mode">
+                              {item.saleType === 'PROPOSTAS'
+                                ? 'Propostas a partir de'
+                                : ListingSaleTypeLabels[item.saleType]}
+                            </span>
                             <strong className="listing-price-value">
-                              {formatBrlFromCents(item.priceInCents)}
+                              {formatBrlFromCents(
+                                item.saleType === 'PROPOSTAS'
+                                  ? (item.startingPriceInCents ?? item.priceInCents)
+                                  : item.priceInCents
+                              )}
                             </strong>
                           </div>
 
