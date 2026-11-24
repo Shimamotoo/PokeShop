@@ -177,6 +177,7 @@ describe('Rotas HTTP de reserva e confirmação por preço fixo (/orders)', () =
           if (filter.cardId && l.cardId !== filter.cardId) return false;
           if (filter.tcgdexId && l.card.tcgdexId !== filter.tcgdexId) return false;
           if (filter.sellerId && l.sellerId !== filter.sellerId) return false;
+          if (filter.saleType && l.saleType !== filter.saleType) return false;
           if (filter.status && l.status !== filter.status) return false;
           return true;
         })

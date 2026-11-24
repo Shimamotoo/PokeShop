@@ -73,6 +73,7 @@ export type FindListingsFilter = {
   cardId?: string;
   tcgdexId?: string;
   sellerId?: string;
+  saleType?: ListingSaleType;
   status?: OrderStatusType;
 };
 
@@ -87,7 +88,7 @@ export interface ListingsRepository {
   create(data: CreateListingRecordInput): Promise<StoredListingRecord>;
   findById(listingId: string): Promise<StoredListingRecord | null>;
   findMany(filter: FindListingsFilter): Promise<StoredListingRecord[]>;
-  cancelListing(listingId: string): Promise<StoredListingRecord>;
+  cancelListing(listingId: string): Promise<StoredListingRecord | null>;
   findMediaAccessContext(s3Key: string): Promise<MediaAccessContext | null>;
 }
 
@@ -217,6 +218,7 @@ export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRe
           ...(filter.cardId ? { cardId: filter.cardId } : {}),
           ...(filter.tcgdexId ? { card: { tcgdexId: filter.tcgdexId } } : {}),
           ...(filter.sellerId ? { sellerId: filter.sellerId } : {}),
+          ...(filter.saleType ? { saleType: filter.saleType } : {}),
           ...(filter.status ? { status: filter.status } : {}),
         },
         orderBy: [{ createdAt: 'desc' }],
@@ -226,8 +228,22 @@ export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRe
       return rows.map(mapPrismaListing);
     },
 
-    async cancelListing(listingId: string): Promise<StoredListingRecord> {
+    async cancelListing(listingId: string): Promise<StoredListingRecord | null> {
       const cancelled = await prisma.$transaction(async (tx) => {
+        const updated = await tx.listing.updateMany({
+          where: {
+            id: listingId,
+            status: 'DISPONIVEL',
+          },
+          data: {
+            status: 'CANCELADO',
+          },
+        });
+
+        if (updated.count === 0) {
+          return null;
+        }
+
         await tx.proposal.updateMany({
           where: {
             listingId,
@@ -238,14 +254,13 @@ export function createPrismaListingsRepository(prisma: PrismaClient): ListingsRe
           },
         });
 
-        return tx.listing.update({
+        return tx.listing.findUnique({
           where: { id: listingId },
-          data: { status: 'CANCELADO' },
           include: listingInclude,
         });
       });
 
-      return mapPrismaListing(cancelled);
+      return cancelled ? mapPrismaListing(cancelled) : null;
     },
 
     async findMediaAccessContext(s3Key: string): Promise<MediaAccessContext | null> {

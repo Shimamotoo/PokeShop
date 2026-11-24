@@ -12,6 +12,7 @@ import {
   type PresignUploadRequest,
 } from '@pokeshop/shared';
 import type {
+  CreateListingRecordInput,
   ListingsRepository,
   StoredListingRecord,
 } from './listings.repository.js';
@@ -123,47 +124,83 @@ export async function requestPhotoUploadPresign(
   });
 }
 
-export async function publishFixedPriceListing(
+export function buildListingCreateRecord(
+  sellerId: string,
+  input: CreateListingInput
+): CreateListingRecordInput {
+  const normalizedPhotoKeys = input.photoKeys.map((key) => key.trim());
+
+  if (
+    normalizedPhotoKeys.length < MIN_LISTING_PHOTOS ||
+    normalizedPhotoKeys.length > MAX_LISTING_PHOTOS ||
+    normalizedPhotoKeys.some((key) => key.length === 0)
+  ) {
+    throw new ListingError(
+      'O anúncio deve conter entre 1 e 5 fotos reais válidas do exemplar.',
+      400
+    );
+  }
+
+  let priceInCents: number;
+  let startingPriceInCents: number | null;
+
+  if (input.saleType === 'PRECO_FIXO') {
+    if (!Number.isInteger(input.priceInCents) || input.priceInCents <= 0) {
+      throw new ListingError('O preço fixo deve ser um valor inteiro maior que zero.', 400);
+    }
+    priceInCents = input.priceInCents;
+    startingPriceInCents = null;
+  } else if (input.saleType === 'PROPOSTAS') {
+    if (
+      !Number.isInteger(input.startingPriceInCents) ||
+      input.startingPriceInCents <= 0
+    ) {
+      throw new ListingError(
+        'O valor inicial mínimo deve ser um valor inteiro maior que zero.',
+        400
+      );
+    }
+    // Em PROPOSTAS, priceInCents espelha o piso mínimo para manter compatibilidade com o schema Prisma (Int obrigatório).
+    startingPriceInCents = input.startingPriceInCents;
+    priceInCents = input.startingPriceInCents;
+  } else {
+    throw new ListingError('Modalidade de venda inválida.', 400);
+  }
+
+  const normalizedLanguage = input.language.trim() || 'PT-BR';
+  const normalizedEdition = input.edition?.trim() ? input.edition.trim() : null;
+  const normalizedDescription = input.description?.trim()
+    ? input.description.trim()
+    : null;
+
+  return {
+    cardId: input.cardId,
+    sellerId,
+    saleType: input.saleType,
+    priceInCents,
+    startingPriceInCents,
+    condition: input.condition,
+    language: normalizedLanguage,
+    edition: normalizedEdition,
+    description: normalizedDescription,
+    photoKeys: normalizedPhotoKeys,
+  };
+}
+
+export async function publishListing(
   sellerId: string,
   input: CreateListingInput,
   repository: ListingsRepository,
   s3Storage: S3StorageProvider
 ): Promise<ListingView> {
-  if (input.saleType !== 'PRECO_FIXO') {
-    throw new ListingError(
-      'Esta operação aceita apenas anúncios na modalidade PRECO_FIXO.',
-      400
-    );
-  }
+  const recordInput = buildListingCreateRecord(sellerId, input);
 
-  if (
-    input.photoKeys.length < MIN_LISTING_PHOTOS ||
-    input.photoKeys.length > MAX_LISTING_PHOTOS
-  ) {
-    throw new ListingError(
-      'O anúncio deve conter entre 1 e 5 fotos reais do exemplar.',
-      400
-    );
-  }
-
-  const card = await repository.findCardById(input.cardId);
+  const card = await repository.findCardById(recordInput.cardId);
   if (!card) {
     throw new ListingError('Carta não encontrada no catálogo local.', 404);
   }
 
-  const created = await repository.create({
-    cardId: input.cardId,
-    sellerId,
-    saleType: 'PRECO_FIXO',
-    priceInCents: input.priceInCents,
-    startingPriceInCents: null,
-    condition: input.condition,
-    language: input.language.trim() || 'PT-BR',
-    edition: input.edition?.trim() ? input.edition.trim() : null,
-    description: input.description?.trim() ? input.description.trim() : null,
-    photoKeys: input.photoKeys.map((key) => key.trim()),
-  });
-
+  const created = await repository.create(recordInput);
   return toListingView(created, s3Storage);
 }
 
@@ -176,6 +213,7 @@ export async function listListings(
     cardId: query.cardId,
     tcgdexId: query.tcgdexId,
     sellerId: query.sellerId,
+    saleType: query.saleType,
     status: query.status ?? 'DISPONIVEL',
   });
 
@@ -228,13 +266,14 @@ export async function authorizeAndSignMediaRead(
   return s3Storage.createPresignedDownloadUrl(context.s3Key);
 }
 
-export async function cancelFixedPriceListing(
+export async function cancelListing(
   listingId: string,
   requesterUserId: string,
   repository: ListingsRepository,
   s3Storage: S3StorageProvider
 ): Promise<ListingView> {
-  // Máquina de estados (FR-023): apenas o vendedor dono pode cancelar anúncio DISPONIVEL -> CANCELADO
+  // Máquina de estados (FR-023): apenas o vendedor dono pode cancelar anúncio DISPONIVEL -> CANCELADO,
+  // descartando todas as propostas pendentes em transação atômica.
   const listing = await repository.findById(listingId);
   if (!listing) {
     throw new ListingError('Anúncio não encontrado.', 404);
@@ -246,5 +285,8 @@ export async function cancelFixedPriceListing(
     throw new ListingError('Apenas anúncios com status DISPONIVEL podem ser cancelados.', 409);
   }
   const cancelled = await repository.cancelListing(listingId);
+  if (!cancelled) {
+    throw new ListingError('Apenas anúncios com status DISPONIVEL podem ser cancelados.', 409);
+  }
   return toListingView(cancelled, s3Storage);
 }

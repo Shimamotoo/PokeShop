@@ -17,6 +17,11 @@ export const MAX_LISTING_PHOTOS = 5;
 export const listingSaleTypeSchema = z.enum(['PRECO_FIXO', 'PROPOSTAS']);
 export type ListingSaleType = z.infer<typeof listingSaleTypeSchema>;
 
+export const ListingSaleTypeLabels: Record<ListingSaleType, string> = {
+  PRECO_FIXO: 'Preço fixo',
+  PROPOSTAS: 'Por propostas',
+};
+
 export const cardConditionSchema = z.enum([
   CardCondition.PERFEITO_ESTADO,
   CardCondition.POUCO_USADA,
@@ -68,14 +73,8 @@ export const presignDownloadResponseSchema = z.object({
 
 export type PresignDownloadResponse = z.infer<typeof presignDownloadResponseSchema>;
 
-export const createListingSchema = z.object({
+const baseCreateListingFields = {
   cardId: z.string().uuid('ID de carta inválido.'),
-  saleType: listingSaleTypeSchema.default('PRECO_FIXO'),
-  priceInCents: z
-    .number()
-    .int('O preço deve ser informado em centavos inteiros.')
-    .positive('O preço deve ser maior que zero.')
-    .max(100_000_000, 'Valor máximo excedido.'),
   condition: cardConditionSchema,
   language: z
     .string()
@@ -99,8 +98,35 @@ export const createListingSchema = z.object({
     .array(z.string().trim().min(1, 'Chave S3 da foto é obrigatória.'))
     .min(MIN_LISTING_PHOTOS, 'Pelo menos 1 foto real do exemplar é obrigatória.')
     .max(MAX_LISTING_PHOTOS, 'Máximo de 5 fotos permitidas por anúncio.'),
+};
+
+export const createFixedPriceListingSchema = z.object({
+  ...baseCreateListingFields,
+  saleType: z.literal('PRECO_FIXO'),
+  priceInCents: z
+    .number()
+    .int('O preço deve ser informado em centavos inteiros.')
+    .positive('O preço deve ser maior que zero.')
+    .max(100_000_000, 'Valor máximo excedido.'),
 });
 
+export const createProposalsListingSchema = z.object({
+  ...baseCreateListingFields,
+  saleType: z.literal('PROPOSTAS'),
+  startingPriceInCents: z
+    .number()
+    .int('O valor inicial deve ser informado em centavos inteiros.')
+    .positive('O valor inicial deve ser maior que zero.')
+    .max(100_000_000, 'Valor máximo excedido.'),
+});
+
+export const createListingSchema = z.discriminatedUnion('saleType', [
+  createFixedPriceListingSchema,
+  createProposalsListingSchema,
+]);
+
+export type CreateFixedPriceListingInput = z.infer<typeof createFixedPriceListingSchema>;
+export type CreateProposalsListingInput = z.infer<typeof createProposalsListingSchema>;
 export type CreateListingInput = z.infer<typeof createListingSchema>;
 
 export const listingPhotoSchema = z.object({
@@ -166,6 +192,7 @@ export const listListingsQuerySchema = z.object({
   cardId: z.string().uuid().optional(),
   tcgdexId: z.string().trim().min(1).optional(),
   sellerId: z.string().uuid().optional(),
+  saleType: listingSaleTypeSchema.optional(),
   status: listingStatusSchema.optional(),
 });
 

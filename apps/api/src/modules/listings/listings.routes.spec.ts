@@ -27,7 +27,7 @@ function formatBirthDateForAge(yearsOld: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-describe('Rotas HTTP de anúncios de preço fixo (/listings)', () => {
+describe('Rotas HTTP de anúncios (/listings)', () => {
   let app: FastifyInstance;
   let signedUploads: string[];
   let signedDownloads: string[];
@@ -38,6 +38,13 @@ describe('Rotas HTTP de anúncios de preço fixo (/listings)', () => {
   const testUsers: StoredUserRecord[] = [];
   const testCards: StoredCardSummary[] = [];
   const testListings: StoredListingRecord[] = [];
+  const testProposals: Array<{
+    id: string;
+    listingId: string;
+    buyerId: string;
+    amountInCents: number;
+    status: 'PENDENTE' | 'ACEITA' | 'RECUSADA';
+  }> = [];
   const testMediaContexts: Record<string, MediaAccessContext> = {};
 
   const fakeS3Storage: S3StorageProvider = {
@@ -146,15 +153,21 @@ describe('Rotas HTTP de anúncios de preço fixo (/listings)', () => {
         if (filter.cardId && l.cardId !== filter.cardId) return false;
         if (filter.tcgdexId && l.card.tcgdexId !== filter.tcgdexId) return false;
         if (filter.sellerId && l.sellerId !== filter.sellerId) return false;
+        if (filter.saleType && l.saleType !== filter.saleType) return false;
         if (filter.status && l.status !== filter.status) return false;
         return true;
       });
     },
     async cancelListing(id) {
       const listing = testListings.find((l) => l.id === id);
-      if (!listing) throw new Error('Listing not found');
+      if (!listing || listing.status !== 'DISPONIVEL') return null;
       listing.status = 'CANCELADO';
       listing.updatedAt = new Date();
+      for (const proposal of testProposals) {
+        if (proposal.listingId === id && proposal.status === 'PENDENTE') {
+          proposal.status = 'RECUSADA';
+        }
+      }
       for (const photo of listing.photos) {
         testMediaContexts[photo.s3Key] = {
           s3Key: photo.s3Key,
@@ -241,6 +254,7 @@ describe('Rotas HTTP de anúncios de preço fixo (/listings)', () => {
       testUsers.length = 0;
       testCards.length = 0;
       testListings.length = 0;
+      testProposals.length = 0;
       for (const key of Object.keys(testMediaContexts)) {
         delete testMediaContexts[key];
       }
@@ -301,6 +315,48 @@ describe('Rotas HTTP de anúncios de preço fixo (/listings)', () => {
         visibility: 'PRIVATE',
       };
     }
+  }
+
+  async function seedPendingProposals(
+    listingId: string,
+    buyers: Array<{ buyerId: string; amountInCents: number }>
+  ) {
+    if (usePostgresTestDb) {
+      const { prisma } = await import('@pokeshop/database');
+      await prisma.proposal.createMany({
+        data: buyers.map((entry) => ({
+          listingId,
+          buyerId: entry.buyerId,
+          amountInCents: entry.amountInCents,
+          status: 'PENDENTE',
+        })),
+      });
+    } else {
+      for (const entry of buyers) {
+        testProposals.push({
+          id: randomUUID(),
+          listingId,
+          buyerId: entry.buyerId,
+          amountInCents: entry.amountInCents,
+          status: 'PENDENTE',
+        });
+      }
+    }
+  }
+
+  async function getProposalStatuses(listingId: string): Promise<string[]> {
+    if (usePostgresTestDb) {
+      const { prisma } = await import('@pokeshop/database');
+      const rows = await prisma.proposal.findMany({
+        where: { listingId },
+        select: { status: true },
+      });
+      return rows.map((row) => row.status);
+    }
+
+    return testProposals
+      .filter((proposal) => proposal.listingId === listingId)
+      .map((proposal) => proposal.status);
   }
 
   it('Valida formato (JPEG, PNG, WebP) e tamanho máximo de 5 MB ao emitir Presigned PUT URL', async () => {
@@ -538,6 +594,150 @@ describe('Rotas HTTP de anúncios de preço fixo (/listings)', () => {
       method: 'GET',
       url: `/listings?cardId=${cardId}`,
     });
+    assert.equal(listAfterCancel.json().items.length, 0);
+  });
+
+  it('Publica anúncio por propostas com Valor inicial mínimo, permite consulta pública por visitante e filtra por modalidade', async () => {
+    const seller = await registerAndLogin('Cynthia Sinnoh', 'cynthia@pokeshop.br');
+
+    // Rejeita anúncio PROPOSTAS sem startingPriceInCents ou com valor <= 0
+    const missingStartRes = await app.inject({
+      method: 'POST',
+      url: '/listings',
+      headers: { authorization: `Bearer ${seller.token}` },
+      payload: {
+        cardId,
+        saleType: 'PROPOSTAS',
+        condition: 'PERFEITO_ESTADO',
+        language: 'PT-BR',
+        photoKeys: [`listings/${seller.user.id}/garchomp.jpg`],
+      },
+    });
+    assert.equal(missingStartRes.statusCode, 400);
+
+    const zeroStartRes = await app.inject({
+      method: 'POST',
+      url: '/listings',
+      headers: { authorization: `Bearer ${seller.token}` },
+      payload: {
+        cardId,
+        saleType: 'PROPOSTAS',
+        startingPriceInCents: 0,
+        condition: 'PERFEITO_ESTADO',
+        language: 'PT-BR',
+        photoKeys: [`listings/${seller.user.id}/garchomp.jpg`],
+      },
+    });
+    assert.equal(zeroStartRes.statusCode, 400);
+
+    // Publica anúncio válido por Propostas
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/listings',
+      headers: { authorization: `Bearer ${seller.token}` },
+      payload: {
+        cardId,
+        saleType: 'PROPOSTAS',
+        startingPriceInCents: 18500,
+        condition: 'POUCO_USADA',
+        language: 'PT-BR',
+        edition: 'Full Art Nacional',
+        description: 'Aberto para propostas acima de R$ 185,00, sem prazo fixo.',
+        photoKeys: [`listings/${seller.user.id}/garchomp-frente.jpg`],
+      },
+    });
+
+    assert.equal(createRes.statusCode, 201);
+    const created = createRes.json();
+    assert.equal(created.saleType, 'PROPOSTAS');
+    assert.equal(created.startingPriceInCents, 18500);
+    assert.equal(created.priceInCents, 18500);
+    assert.equal(created.status, 'DISPONIVEL');
+    assert.equal(created.cardId, cardId);
+    assert.equal(created.photos.length, 1);
+
+    // Visitante sem login consulta listagem filtrada por PROPOSTAS
+    const proposalsListRes = await app.inject({
+      method: 'GET',
+      url: `/listings?cardId=${cardId}&saleType=PROPOSTAS`,
+    });
+    assert.equal(proposalsListRes.statusCode, 200);
+    assert.equal(proposalsListRes.json().items.length, 1);
+    assert.equal(proposalsListRes.json().items[0].id, created.id);
+    assert.equal(proposalsListRes.json().items[0].startingPriceInCents, 18500);
+
+    // Visitante filtrando por PRECO_FIXO não vê o anúncio por propostas
+    const fixedListRes = await app.inject({
+      method: 'GET',
+      url: `/listings?cardId=${cardId}&saleType=PRECO_FIXO`,
+    });
+    assert.equal(fixedListRes.statusCode, 200);
+    assert.equal(fixedListRes.json().items.length, 0);
+
+    // Visitante sem login consulta detalhe do anúncio público
+    const detailRes = await app.inject({
+      method: 'GET',
+      url: `/listings/${created.id}`,
+    });
+    assert.equal(detailRes.statusCode, 200);
+    assert.equal(detailRes.json().saleType, 'PROPOSTAS');
+    assert.equal(detailRes.json().startingPriceInCents, 18500);
+    assert.equal(detailRes.json().seller.name, 'Cynthia Sinnoh');
+  });
+
+  it('DELETE /listings/:id em anúncio PROPOSTAS DISPONIVEL leva a CANCELADO e descarta propostas pendentes', async () => {
+    const seller = await registerAndLogin('Steven Stone', 'steven@pokeshop.br');
+    const buyerA = await registerAndLogin('May Hoenn', 'may@pokeshop.br');
+    const buyerB = await registerAndLogin('Brendan Hoenn', 'brendan@pokeshop.br');
+
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/listings',
+      headers: { authorization: `Bearer ${seller.token}` },
+      payload: {
+        cardId,
+        saleType: 'PROPOSTAS',
+        startingPriceInCents: 30000,
+        condition: 'PERFEITO_ESTADO',
+        language: 'PT-BR',
+        photoKeys: [`listings/${seller.user.id}/metagross.webp`],
+      },
+    });
+    assert.equal(createRes.statusCode, 201);
+    const listingId = createRes.json().id as string;
+
+    // Semeia 2 propostas pendentes (Cenário 3 do SPEC)
+    await seedPendingProposals(listingId, [
+      { buyerId: buyerA.user.id, amountInCents: 32000 },
+      { buyerId: buyerB.user.id, amountInCents: 35000 },
+    ]);
+
+    // Comprador não pode excluir anúncio do vendedor -> 403
+    const forbiddenRes = await app.inject({
+      method: 'DELETE',
+      url: `/listings/${listingId}`,
+      headers: { authorization: `Bearer ${buyerA.token}` },
+    });
+    assert.equal(forbiddenRes.statusCode, 403);
+
+    // Vendedor exclui anúncio DISPONIVEL -> 200 CANCELADO e propostas PENDENTE viram RECUSADA
+    const deleteRes = await app.inject({
+      method: 'DELETE',
+      url: `/listings/${listingId}`,
+      headers: { authorization: `Bearer ${seller.token}` },
+    });
+    assert.equal(deleteRes.statusCode, 200);
+    assert.equal(deleteRes.json().status, 'CANCELADO');
+
+    const statuses = await getProposalStatuses(listingId);
+    assert.deepEqual(statuses, ['RECUSADA', 'RECUSADA']);
+
+    // Anúncio cancelado não aparece mais na vitrine pública
+    const listAfterCancel = await app.inject({
+      method: 'GET',
+      url: `/listings?cardId=${cardId}&saleType=PROPOSTAS`,
+    });
+    assert.equal(listAfterCancel.statusCode, 200);
     assert.equal(listAfterCancel.json().items.length, 0);
   });
 });

@@ -4,11 +4,11 @@
 
 **Blocked by:** 03: Publicar anúncio de preço fixo.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] O vendedor consegue criar e consultar um anúncio na modalidade por Propostas associado a um Exemplar e a uma Carta de catálogo.
-- [ ] O anúncio registra um Valor inicial mínimo.
-- [ ] Enquanto o anúncio estiver `DISPONIVEL`, ele continua recebendo Propostas sem prazo fixo até o vendedor aceitar uma proposta ou excluir o anúncio.
-- [ ] Visitantes conseguem consultar o anúncio público sem enviar Propostas.
-- [ ] O vendedor consegue excluir o anúncio `DISPONIVEL`, levando-o a `CANCELADO` e descartando propostas pendentes.
-- [ ] Testes pela API verificam criação, consulta e exclusão do anúncio.
+- [x] O vendedor consegue criar e consultar um anúncio na modalidade por Propostas associado a um Exemplar e a uma Carta de catálogo.
+- [x] O anúncio registra um Valor inicial mínimo.
+- [x] Enquanto o anúncio estiver `DISPONIVEL`, ele continua recebendo Propostas sem prazo fixo até o vendedor aceitar uma proposta ou excluir o anúncio.
+- [x] Visitantes conseguem consultar o anúncio público sem enviar Propostas.
+- [x] O vendedor consegue excluir o anúncio `DISPONIVEL`, levando-o a `CANCELADO` e descartando propostas pendentes.
+- [x] Testes pela API verificam criação, consulta e exclusão do anúncio.
