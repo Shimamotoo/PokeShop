@@ -4,12 +4,12 @@
 
 **Blocked by:** 04: Publicar anúncio por propostas; 05: Reservar e confirmar compra por preço fixo.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Somente usuários autenticados conseguem enviar uma Proposta.
-- [ ] O sistema aceita apenas valores estritamente superiores ao Valor inicial.
-- [ ] O vendedor consegue aceitar ou recusar Propostas individualmente, sem contraproposta.
-- [ ] Aceitar uma Proposta move o anúncio para `NEGOCIACAO_ABERTA`, bloqueia novas Propostas e recusa automaticamente as demais pendentes.
-- [ ] Requisições concorrentes de aceite não conseguem iniciar mais de uma negociação para o mesmo Exemplar.
-- [ ] O sistema cria a negociação para o comprador escolhido; somente as partes veem seu estado.
-- [ ] Testes HTTP cobrem valores no limite, aceites concorrentes e recusa das demais Propostas.
+- [x] Somente usuários autenticados conseguem enviar uma Proposta.
+- [x] O sistema aceita apenas valores estritamente superiores ao Valor inicial.
+- [x] O vendedor consegue aceitar ou recusar Propostas individualmente, sem contraproposta.
+- [x] Aceitar uma Proposta move o anúncio para `NEGOCIACAO_ABERTA`, bloqueia novas Propostas e recusa automaticamente as demais pendentes.
+- [x] Requisições concorrentes de aceite não conseguem iniciar mais de uma negociação para o mesmo Exemplar.
+- [x] O sistema cria a negociação para o comprador escolhido; somente as partes veem seu estado.
+- [x] Testes HTTP cobrem valores no limite, aceites concorrentes e recusa das demais Propostas.

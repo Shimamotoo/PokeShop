@@ -18,11 +18,16 @@ import {
   ordersRoutes,
   type OrdersRoutesOptions,
 } from './modules/orders/orders.routes.js';
+import {
+  proposalsRoutes,
+  type ProposalsRoutesOptions,
+} from './modules/proposals/proposals.routes.js';
 
 export type BuildAppOptions = {
   auth?: AuthRoutesOptions;
   listings?: ListingsRoutesOptions;
   orders?: OrdersRoutesOptions;
+  proposals?: ProposalsRoutesOptions;
   logger?: boolean;
 };
 
@@ -47,6 +52,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   app.register(authRoutes, options.auth ?? {});
   app.register(listingsRoutes, options.listings ?? {});
   app.register(ordersRoutes, options.orders ?? {});
+  app.register(proposalsRoutes, options.proposals ?? {});
 
   return app;
 }

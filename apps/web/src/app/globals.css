@@ -1646,6 +1646,84 @@ a:focus-visible {
   margin-top: 18px;
 }
 
+.proposal-compose,
+.proposal-list {
+  display: grid;
+  gap: 12px;
+}
+
+.proposal-field {
+  display: grid;
+  gap: 7px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.proposal-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--border-focus);
+  border-radius: 9px;
+  color: var(--ink-primary);
+  background: var(--surface-stage);
+  font: inherit;
+}
+
+.proposal-field input:focus-visible {
+  outline: 2px solid var(--accent-crimson);
+  outline-offset: 2px;
+}
+
+.proposal-list {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.proposal-list-heading,
+.proposal-row,
+.proposal-row > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.proposal-list-heading h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.proposal-list-heading > span,
+.proposal-row > div:first-child > span {
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.proposal-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.proposal-row > div:first-child {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.proposal-row > div:first-child > strong {
+  font-size: 16px;
+}
+
+@media (max-width: 520px) {
+  .proposal-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .order-buy-box {
   display: flex;
   flex-direction: column;
