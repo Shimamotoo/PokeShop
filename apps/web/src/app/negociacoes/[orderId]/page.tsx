@@ -220,7 +220,7 @@ export default function NegotiationChatPage() {
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onKeyDown={handleTextareaKeyDown}
-                    placeholder="Escreva sua mensagem para combinar frete e envio..."
+                    placeholder="Escreva sua mensagem..."
                     disabled={isSending}
                   />
                   <div className="chat-composer-footer">

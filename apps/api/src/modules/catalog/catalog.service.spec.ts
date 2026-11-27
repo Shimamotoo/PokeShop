@@ -54,4 +54,27 @@ describe('syncCatalog', () => {
       },
     ]);
   });
+
+  it('repassa o setId para listCards quando informado', async () => {
+    let receivedSetId: string | undefined;
+
+    const fakeClient: TcgdexClient = {
+      async listCards(setId) {
+        receivedSetId = setId;
+        return [];
+      },
+      async getCard() {
+        return null;
+      },
+    };
+
+    const result = await syncCatalog(
+      fakeClient,
+      { async upsert() {} },
+      { setId: '30th' }
+    );
+
+    assert.equal(receivedSetId, '30th');
+    assert.deepEqual(result, { imported: 0, ignored: 0 });
+  });
 });
