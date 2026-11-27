@@ -5,3 +5,4 @@ export * from './schemas/listing.schema.js';
 export * from './schemas/catalog.schema.js';
 export * from './schemas/order.schema.js';
 export * from './schemas/proposal.schema.js';
+export * from './schemas/chat.schema.js';

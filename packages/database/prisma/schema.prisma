@@ -57,6 +57,14 @@ enum ReportStatus {
   DESCARTADA
 }
 
+enum NotificationType {
+  ORDER_RESERVED
+  ORDER_CONFIRMED
+  ORDER_DECLINED
+  PROPOSAL_ACCEPTED
+  NEGOTIATION_INACTIVITY_WARNING
+}
+
 model User {
   id                String       @id @default(uuid())
   email             String       @unique
@@ -81,6 +89,7 @@ model User {
   postComments      PostComment[]
   collections       Collection[]
   reportsSubmitted  Report[]     @relation("ReporterUser")
+  notifications     Notification[]
 }
 
 model Card {
@@ -161,20 +170,23 @@ model Order {
   buyer        User          @relation("BuyerOrders", fields: [buyerId], references: [id])
   seller       User          @relation("SellerOrders", fields: [sellerId], references: [id])
   chatRoom     ChatRoom?
+  notifications Notification[]
 
   @@index([listingId, status])
   @@index([status, createdAt])
 }
 
 model ChatRoom {
-  id            String        @id @default(uuid())
-  orderId       String        @unique
-  lastMessageAt DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id               String        @id @default(uuid())
+  orderId          String        @unique
+  lastMessageAt    DateTime      @default(now())
+  buyerLastReadAt  DateTime?
+  sellerLastReadAt DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  messages      ChatMessage[]
+  order            Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  messages         ChatMessage[]
 }
 
 model ChatMessage {
@@ -186,6 +198,8 @@ model ChatMessage {
 
   chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
   sender     User     @relation(fields: [senderId], references: [id])
+
+  @@index([chatRoomId, createdAt])
 }
 
 model Post {
@@ -282,4 +296,20 @@ model Report {
   updatedAt      DateTime         @updatedAt
 
   reporter       User             @relation("ReporterUser", fields: [reporterId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  orderId   String?
+  type      NotificationType
+  message   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([orderId])
 }

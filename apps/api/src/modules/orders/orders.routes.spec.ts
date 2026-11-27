@@ -381,6 +381,7 @@ describe('Rotas HTTP de reserva e confirmação por preço fixo (/orders)', () =
   beforeEach(async () => {
     if (usePostgresTestDb) {
       const { prisma } = await import('@pokeshop/database');
+      await prisma.notification.deleteMany();
       await prisma.chatMessage.deleteMany();
       await prisma.chatRoom.deleteMany();
       await prisma.postPhoto.deleteMany();

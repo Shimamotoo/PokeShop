@@ -22,12 +22,14 @@ import {
   proposalsRoutes,
   type ProposalsRoutesOptions,
 } from './modules/proposals/proposals.routes.js';
+import { chatRoutes, type ChatRoutesOptions } from './modules/chat/chat.routes.js';
 
 export type BuildAppOptions = {
   auth?: AuthRoutesOptions;
   listings?: ListingsRoutesOptions;
   orders?: OrdersRoutesOptions;
   proposals?: ProposalsRoutesOptions;
+  chat?: ChatRoutesOptions;
   logger?: boolean;
 };
 
@@ -53,6 +55,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   app.register(listingsRoutes, options.listings ?? {});
   app.register(ordersRoutes, options.orders ?? {});
   app.register(proposalsRoutes, options.proposals ?? {});
+  app.register(chatRoutes, options.chat ?? {});
 
   return app;
 }
