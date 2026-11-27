@@ -3,16 +3,19 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Camera, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Camera, ShieldCheck, Trash2, X } from 'lucide-react';
 import {
   ALLOWED_PHOTO_MIME_TYPES,
   CardCondition,
   CardConditionLabels,
+  CardLanguage,
+  CardLanguageLabels,
   ListingSaleTypeLabels,
   MAX_LISTING_PHOTOS,
   MAX_PHOTO_SIZE_BYTES,
   type AllowedPhotoMimeType,
   type CardConditionType,
+  type CardLanguageType,
   type CatalogCard,
   type ListingSaleType,
   type ListingView,
@@ -23,6 +26,7 @@ import { apiClient } from '@/lib/api-client';
 import { formatBrlFromCents } from '@/lib/format';
 import { useAuth } from '@/features/auth/use-auth';
 import { NegotiationsNavLink } from '@/features/chat/components/negotiations-nav-link';
+import { RaritySymbol } from '@/features/catalog/components/rarity-symbol';
 
 type StagedPhoto = {
   s3Key: string;
@@ -53,7 +57,7 @@ export default function CatalogCardPage() {
   const [condition, setCondition] = useState<CardConditionType>(
     CardCondition.PERFEITO_ESTADO
   );
-  const [language, setLanguage] = useState('PT-BR');
+  const [language, setLanguage] = useState<CardLanguageType>(CardLanguage.PT_BR);
   const [edition, setEdition] = useState('');
   const [description, setDescription] = useState('');
   const [stagedPhotos, setStagedPhotos] = useState<StagedPhoto[]>([]);
@@ -94,6 +98,25 @@ export default function CatalogCardPage() {
       });
     return () => controller.abort();
   }, [tcgdexId, loadListings]);
+
+  useEffect(() => {
+    if (!isFormOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsFormOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFormOpen]);
 
   async function handleFileSelect(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -200,15 +223,15 @@ export default function CatalogCardPage() {
       const payload =
         saleType === 'PROPOSTAS'
           ? {
-              ...commonPayload,
-              saleType: 'PROPOSTAS' as const,
-              startingPriceInCents: priceInCents,
-            }
+            ...commonPayload,
+            saleType: 'PROPOSTAS' as const,
+            startingPriceInCents: priceInCents,
+          }
           : {
-              ...commonPayload,
-              saleType: 'PRECO_FIXO' as const,
-              priceInCents,
-            };
+            ...commonPayload,
+            saleType: 'PRECO_FIXO' as const,
+            priceInCents,
+          };
 
       await apiClient<ListingView>('/listings', {
         method: 'POST',
@@ -269,7 +292,7 @@ export default function CatalogCardPage() {
             <NegotiationsNavLink />
             <Link className="back-link" href="/">
               <ArrowLeft size={15} aria-hidden="true" />
-              <span>Voltar para a vitrine</span>
+              <span>Voltar</span>
             </Link>
           </div>
         </div>
@@ -289,11 +312,6 @@ export default function CatalogCardPage() {
               </div>
 
               <div className="detail-copy">
-                <div className="detail-header-meta">
-                  <p className="detail-kicker">{card.setName}</p>
-                  <span className="detail-rarity-badge">{card.rarity}</span>
-                </div>
-
                 <h1>{card.name}</h1>
 
                 <dl className="detail-facts">
@@ -307,47 +325,37 @@ export default function CatalogCardPage() {
                   </div>
                   <div>
                     <dt>Raridade</dt>
-                    <dd>{card.rarity}</dd>
-                  </div>
-                  <div>
-                    <dt>Código TCGdex</dt>
-                    <dd>{card.tcgdexId}</dd>
+                    <dd className="detail-rarity-inline">
+                      <RaritySymbol rarity={card.rarity} />
+                      <span>{card.rarity}</span>
+                    </dd>
                   </div>
                 </dl>
 
-                <div className="detail-note">
-                  {user ? (
-                    <div className="detail-seller-cta-row">
-                      <span>
-                        Sessão ativa como <strong>{user.name}</strong>. Possui um exemplar
-                        físico desta carta para venda?
-                      </span>
-                      <button
-                        type="button"
-                        className="listing-open-btn"
-                        onClick={() => setIsFormOpen((open) => !open)}
-                      >
-                        <Plus size={16} aria-hidden="true" />
-                        <span>
-                          {isFormOpen ? 'Fechar formulário' : 'Anunciar meu exemplar'}
-                        </span>
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      Visitantes podem consultar o catálogo e os anúncios públicos
-                      livremente. Para anunciar um exemplar desta carta,{' '}
-                      <Link className="auth-inline-link" href="/entrar">
-                        entre na sua conta
-                      </Link>{' '}
-                      ou{' '}
-                      <Link className="auth-inline-link" href="/cadastro">
-                        crie um cadastro
-                      </Link>
-                      .
-                    </>
-                  )}
-                </div>
+                {user ? (
+                  <div className="detail-seller-cta-row">
+                    <button
+                      type="button"
+                      className="listing-open-btn"
+                      onClick={() => setIsFormOpen(true)}
+                    >
+                      Anunciar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="detail-note">
+                    Visitantes podem consultar o catálogo e os anúncios públicos
+                    livremente. Para anunciar um exemplar desta carta,{' '}
+                    <Link className="auth-inline-link" href="/entrar">
+                      entre na sua conta
+                    </Link>{' '}
+                    ou{' '}
+                    <Link className="auth-inline-link" href="/cadastro">
+                      crie um cadastro
+                    </Link>
+                    .
+                  </div>
+                )}
               </div>
             </article>
 
@@ -358,242 +366,247 @@ export default function CatalogCardPage() {
             )}
 
             {user && isFormOpen && (
-              <section
-                className="listing-drawer-card"
-                aria-labelledby="publish-listing-heading"
+              <div
+                className="listing-drawer-backdrop"
+                onClick={() => setIsFormOpen(false)}
               >
-                <div className="listing-drawer-header">
-                  <div>
-                    <h2 id="publish-listing-heading">
-                      Anunciar exemplar — {card.name}
-                    </h2>
-                    <p>
-                      Cada anúncio corresponde a 1 exemplar físico real associado a esta
-                      carta do catálogo.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="listing-drawer-close"
-                    onClick={() => setIsFormOpen(false)}
-                    aria-label="Fechar formulário de anúncio"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                {formError && (
-                  <div className="auth-alert" role="alert">
-                    {formError}
-                  </div>
-                )}
-
-                <form className="listing-form" onSubmit={handlePublishListing}>
-                  <fieldset className="condition-fieldset">
-                    <legend>Modalidade de venda</legend>
-                    <div className="sale-type-selector" role="radiogroup" aria-label="Modalidade de venda">
-                      <label
-                        className={`sale-type-option ${
-                          saleType === 'PRECO_FIXO' ? 'is-selected' : ''
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="saleType"
-                          value="PRECO_FIXO"
-                          checked={saleType === 'PRECO_FIXO'}
-                          onChange={() => setSaleType('PRECO_FIXO')}
-                        />
-                        <span className="condition-option-title">Preço Fixo</span>
-                        <span className="condition-option-desc">
-                          Valor fechado à vista. O comprador reserva o exemplar aguardando
-                          sua confirmação.
-                        </span>
-                      </label>
-
-                      <label
-                        className={`sale-type-option ${
-                          saleType === 'PROPOSTAS' ? 'is-selected' : ''
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="saleType"
-                          value="PROPOSTAS"
-                          checked={saleType === 'PROPOSTAS'}
-                          onChange={() => setSaleType('PROPOSTAS')}
-                        />
-                        <span className="condition-option-title">Por Propostas</span>
-                        <span className="condition-option-desc">
-                          Defina um Valor inicial mínimo e receba propostas acima desse piso
-                          sem prazo fixo de encerramento.
-                        </span>
-                      </label>
-                    </div>
-                  </fieldset>
-
-                  <div className="listing-form-grid">
-                    <div className="auth-field">
-                      <label htmlFor="listing-price">
-                        {saleType === 'PROPOSTAS'
-                          ? 'Valor inicial mínimo (R$)'
-                          : 'Preço fixo (R$)'}
-                      </label>
-                      <input
-                        id="listing-price"
-                        className="auth-input"
-                        type="text"
-                        inputMode="decimal"
-                        placeholder={saleType === 'PROPOSTAS' ? 'Ex: 120,00' : 'Ex: 149,90'}
-                        value={priceInput}
-                        onChange={(e) => setPriceInput(e.target.value)}
-                        required
-                      />
-                      <p className="auth-field-hint">
-                        {saleType === 'PROPOSTAS'
-                          ? 'Compradores só poderão enviar propostas estritamente superiores a este valor.'
-                          : 'Valor à vista sem regateio na modalidade Preço Fixo.'}
+                <aside
+                  className="listing-drawer-card"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="publish-listing-heading"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="listing-drawer-header">
+                    <div>
+                      <h2 id="publish-listing-heading">
+                        Anunciar exemplar — {card.name}
+                      </h2>
+                      <p>
+                        Cada anúncio corresponde a 1 exemplar físico real associado a esta
+                        carta do catálogo.
                       </p>
                     </div>
-
-                    <div className="auth-field">
-                      <label htmlFor="listing-language">Idioma do exemplar</label>
-                      <input
-                        id="listing-language"
-                        className="auth-input"
-                        type="text"
-                        value={language}
-                        onChange={(e) => setLanguage(e.target.value)}
-                        required
-                      />
-                    </div>
-
-                    <div className="auth-field">
-                      <label htmlFor="listing-edition">Edição / Acabamento (opcional)</label>
-                      <input
-                        id="listing-edition"
-                        className="auth-input"
-                        type="text"
-                        placeholder="Ex: Foil, Reverse Foil, Promo"
-                        value={edition}
-                        onChange={(e) => setEdition(e.target.value)}
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      className="listing-drawer-close"
+                      onClick={() => setIsFormOpen(false)}
+                      aria-label="Fechar formulário de anúncio"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
 
-                  <fieldset className="condition-fieldset">
-                    <legend>Condição física padronizada do exemplar</legend>
-                    <div className="condition-options-grid">
-                      {(Object.keys(CardConditionLabels) as CardConditionType[]).map(
-                        (condKey) => (
+                  <div className="listing-drawer-body">
+                    {formError && (
+                      <div className="auth-alert" role="alert">
+                        {formError}
+                      </div>
+                    )}
+
+                    <form className="listing-form" onSubmit={handlePublishListing}>
+                      <fieldset className="condition-fieldset">
+                        <legend>Modalidade de venda</legend>
+                        <div className="sale-type-selector" role="radiogroup" aria-label="Modalidade de venda">
                           <label
-                            key={condKey}
-                            className={`condition-option-card ${
-                              condition === condKey ? 'is-selected' : ''
-                            }`}
+                            className={`sale-type-option ${saleType === 'PRECO_FIXO' ? 'is-selected' : ''
+                              }`}
                           >
                             <input
                               type="radio"
-                              name="condition"
-                              value={condKey}
-                              checked={condition === condKey}
-                              onChange={() => setCondition(condKey)}
+                              name="saleType"
+                              value="PRECO_FIXO"
+                              checked={saleType === 'PRECO_FIXO'}
+                              onChange={() => setSaleType('PRECO_FIXO')}
                             />
-                            <span className="condition-option-title">
-                              {CardConditionLabels[condKey]}
-                            </span>
+                            <span className="condition-option-title">Preço Fixo</span>
                             <span className="condition-option-desc">
-                              {CONDITION_DESCRIPTIONS[condKey]}
+                              Valor fechado à vista. O comprador reserva o exemplar aguardando
+                              sua confirmação.
                             </span>
                           </label>
-                        )
-                      )}
-                    </div>
-                  </fieldset>
 
-                  <div className="auth-field">
-                    <label htmlFor="listing-description">
-                      Observações sobre o exemplar (opcional)
-                    </label>
-                    <textarea
-                      id="listing-description"
-                      className="auth-input listing-textarea"
-                      rows={3}
-                      maxLength={2000}
-                      placeholder="Descreva centralização, estado das bordas, superfície ou detalhes relevantes…"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="auth-field">
-                    <label htmlFor="listing-photos-input">
-                      Fotos reais do exemplar (1 a 5 fotos • JPEG, PNG ou WebP até 5 MB)
-                    </label>
-                    <div className="photo-upload-zone">
-                      <label className="photo-upload-trigger" htmlFor="listing-photos-input">
-                        <Camera size={18} aria-hidden="true" />
-                        <span>
-                          {isUploadingPhoto
-                            ? 'Validando e assinando upload no S3…'
-                            : 'Selecionar fotos do exemplar'}
-                        </span>
-                      </label>
-                      <input
-                        id="listing-photos-input"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        multiple
-                        className="visually-hidden"
-                        onChange={handleFileSelect}
-                        disabled={
-                          isUploadingPhoto || stagedPhotos.length >= MAX_LISTING_PHOTOS
-                        }
-                      />
-                      <span className="photo-upload-counter">
-                        {stagedPhotos.length} de {MAX_LISTING_PHOTOS} fotos anexadas
-                      </span>
-                    </div>
-
-                    {stagedPhotos.length > 0 && (
-                      <ul className="staged-photos-list">
-                        {stagedPhotos.map((photo, index) => (
-                          <li key={photo.s3Key} className="staged-photo-pill">
-                            <ShieldCheck size={14} aria-hidden="true" />
-                            <span className="staged-photo-name">
-                              #{index + 1} {photo.fileName}
+                          <label
+                            className={`sale-type-option ${saleType === 'PROPOSTAS' ? 'is-selected' : ''
+                              }`}
+                          >
+                            <input
+                              type="radio"
+                              name="saleType"
+                              value="PROPOSTAS"
+                              checked={saleType === 'PROPOSTAS'}
+                              onChange={() => setSaleType('PROPOSTAS')}
+                            />
+                            <span className="condition-option-title">Por Propostas</span>
+                            <span className="condition-option-desc">
+                              Defina um Valor inicial mínimo e receba propostas acima desse piso
+                              sem prazo fixo de encerramento.
                             </span>
-                            <span className="staged-photo-size">
-                              ({Math.ceil(photo.sizeBytes / 1024)} KB • S3 privado)
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => removeStagedPhoto(photo.s3Key)}
-                              aria-label={`Remover foto ${photo.fileName}`}
-                            >
-                              Remover
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+                          </label>
+                        </div>
+                      </fieldset>
 
-                  <div className="listing-form-actions">
-                    <button
-                      type="submit"
-                      className="auth-submit-btn"
-                      disabled={isSubmitting || isUploadingPhoto}
-                    >
-                      {isSubmitting
-                        ? 'Publicando anúncio…'
-                        : saleType === 'PROPOSTAS'
-                          ? 'Publicar anúncio por propostas'
-                          : 'Publicar anúncio a preço fixo'}
-                    </button>
+                      <div className="listing-form-grid">
+                        <div className="auth-field">
+                          <label htmlFor="listing-price">
+                            {saleType === 'PROPOSTAS'
+                              ? 'Valor inicial mínimo (R$)'
+                              : 'Preço fixo (R$)'}
+                          </label>
+                          <input
+                            id="listing-price"
+                            className="auth-input"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder={saleType === 'PROPOSTAS' ? 'Ex: 120,00' : 'Ex: 149,90'}
+                            value={priceInput}
+                            onChange={(e) => setPriceInput(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div className="auth-field">
+                          <label htmlFor="listing-language">Idioma do exemplar</label>
+                          <select
+                            id="listing-language"
+                            className="auth-input"
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value as CardLanguageType)}
+                            required
+                          >
+                            {(Object.keys(CardLanguageLabels) as CardLanguageType[]).map(
+                              (langCode) => (
+                                <option key={langCode} value={langCode}>
+                                  {CardLanguageLabels[langCode]}
+                                </option>
+                              )
+                            )}
+                          </select>
+                        </div>
+
+                        <div className="auth-field">
+                          <label htmlFor="listing-edition">Edição / Acabamento (opcional)</label>
+                          <input
+                            id="listing-edition"
+                            className="auth-input"
+                            type="text"
+                            placeholder="Ex: Foil, Reverse Foil, Promo"
+                            value={edition}
+                            onChange={(e) => setEdition(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <fieldset className="condition-fieldset">
+                        <legend>Condição física padronizada do exemplar</legend>
+                        <div className="condition-options-grid">
+                          {(Object.keys(CardConditionLabels) as CardConditionType[]).map(
+                            (condKey) => (
+                              <label
+                                key={condKey}
+                                className={`condition-option-card ${condition === condKey ? 'is-selected' : ''
+                                  }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="condition"
+                                  value={condKey}
+                                  checked={condition === condKey}
+                                  onChange={() => setCondition(condKey)}
+                                />
+                                <span className="condition-option-title">
+                                  {CardConditionLabels[condKey]}
+                                </span>
+                                <span className="condition-option-desc">
+                                  {CONDITION_DESCRIPTIONS[condKey]}
+                                </span>
+                              </label>
+                            )
+                          )}
+                        </div>
+                      </fieldset>
+
+                      <div className="auth-field">
+                        <label htmlFor="listing-description">
+                          Observações sobre o exemplar (opcional)
+                        </label>
+                        <textarea
+                          id="listing-description"
+                          className="auth-input listing-textarea"
+                          rows={3}
+                          maxLength={2000}
+                          placeholder="Descreva centralização, estado das bordas, superfície ou detalhes relevantes…"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="auth-field">
+                        <label htmlFor="listing-photos-input">
+                          Fotos reais do exemplar (1 a 5 fotos • JPEG, PNG ou WebP até 5 MB)
+                        </label>
+                        <div className="photo-upload-zone">
+                          <label className="photo-upload-trigger" htmlFor="listing-photos-input">
+                            <Camera size={18} aria-hidden="true" />
+                            <span>
+                              {isUploadingPhoto
+                                ? 'Validando e assinando upload no S3…'
+                                : 'Selecionar fotos do exemplar'}
+                            </span>
+                          </label>
+                          <input
+                            id="listing-photos-input"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            multiple
+                            className="visually-hidden"
+                            onChange={handleFileSelect}
+                            disabled={
+                              isUploadingPhoto || stagedPhotos.length >= MAX_LISTING_PHOTOS
+                            }
+                          />
+                          <span className="photo-upload-counter">
+                            {stagedPhotos.length} de {MAX_LISTING_PHOTOS} fotos anexadas
+                          </span>
+                        </div>
+
+                        {stagedPhotos.length > 0 && (
+                          <ul className="staged-photos-list">
+                            {stagedPhotos.map((photo, index) => (
+                              <li key={photo.s3Key} className="staged-photo-pill">
+                                <ShieldCheck size={14} aria-hidden="true" />
+                                <span className="staged-photo-name">
+                                  #{index + 1} {photo.fileName}
+                                </span>
+                                <span className="staged-photo-size">
+                                  ({Math.ceil(photo.sizeBytes / 1024)} KB • S3 privado)
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeStagedPhoto(photo.s3Key)}
+                                  aria-label={`Remover foto ${photo.fileName}`}
+                                >
+                                  Remover
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      <div className="listing-form-actions">
+                        <button
+                          type="submit"
+                          className="auth-submit-btn"
+                          disabled={isSubmitting || isUploadingPhoto}
+                        >
+                          Publicar anúncio
+                        </button>
+                      </div>
+                    </form>
                   </div>
-                </form>
-              </section>
+                </aside>
+              </div>
             )}
 
             <section
@@ -603,15 +616,6 @@ export default function CatalogCardPage() {
               <div className="results-toolbar">
                 <div className="results-summary">
                   <h2 id="available-listings-heading">Exemplares anunciados</h2>
-                  <span className="results-count" aria-live="polite">
-                    {isLoadingListings
-                      ? 'Carregando…'
-                      : `${listings.length} ${
-                          listings.length === 1
-                            ? 'exemplar disponível'
-                            : 'exemplares disponíveis'
-                        }`}
-                  </span>
                 </div>
               </div>
 

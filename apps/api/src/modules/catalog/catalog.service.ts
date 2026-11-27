@@ -17,11 +17,16 @@ function extractId(card: unknown): string | null {
   return typeof id === 'string' && id.trim() ? id : null;
 }
 
+export type SyncCatalogOptions = {
+  setId?: string;
+};
+
 export async function syncCatalog(
   client: TcgdexClient,
-  repository: CatalogRepository
+  repository: CatalogRepository,
+  options?: SyncCatalogOptions
 ): Promise<CatalogSyncResult> {
-  const summaries = await client.listCards();
+  const summaries = await client.listCards(options?.setId);
   let imported = 0;
   let ignored = 0;
 

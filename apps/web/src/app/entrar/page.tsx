@@ -102,7 +102,7 @@ export default function LoginPage() {
           <div className="topbar-actions">
             <Link className="back-link" href="/">
               <ArrowLeft size={15} aria-hidden="true" />
-              <span>Voltar para a vitrine</span>
+              <span>Voltar</span>
             </Link>
           </div>
         </div>

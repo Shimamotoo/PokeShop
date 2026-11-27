@@ -218,19 +218,21 @@ export default function ListingDetailPage() {
     setActionError(null);
     setActionFeedback(null);
 
-    const normalizeAmount = proposalAmount.trim().replace(",", ".");
-    const amountInReais = Math.round(Number(normalizeAmount) * 100);
+    const rawAmount = proposalAmount.trim();
+    const normalizeAmount = rawAmount.includes(",")
+      ? rawAmount.replace(/\./g, "").replace(",", ".")
+      : rawAmount;
+    const amountInCents = Math.round(Number(normalizeAmount) * 100);
 
     if (
       !normalizeAmount ||
-      !Number.isFinite(amountInReais) ||
-      amountInReais <= 0
+      !Number.isFinite(amountInCents) ||
+      amountInCents <= 0
     ) {
       setActionError("Informe um valor válido para a proposta.");
       return;
     }
 
-    const amountInCents = Math.round(amountInReais * 100);
     const startingPrice = listing.startingPriceInCents ?? listing.priceInCents;
     if (amountInCents <= startingPrice) {
       setActionError(
@@ -292,7 +294,7 @@ export default function ListingDetailPage() {
             ) : (
               <Link className="back-link" href="/">
                 <ArrowLeft size={15} aria-hidden="true" />
-                <span>Voltar para a vitrine</span>
+                <span>Voltar</span>
               </Link>
             )}
           </div>
@@ -336,9 +338,8 @@ export default function ListingDetailPage() {
                     <button
                       key={photo.id}
                       type="button"
-                      className={`listing-thumb-btn ${
-                        index === selectedPhotoIndex ? "is-active" : ""
-                      }`}
+                      className={`listing-thumb-btn ${index === selectedPhotoIndex ? "is-active" : ""
+                        }`}
                       onClick={() => setSelectedPhotoIndex(index)}
                     >
                       Foto #{index + 1}
@@ -450,16 +451,6 @@ export default function ListingDetailPage() {
                     ) : (
                       <div className="order-confirm-card">
                         <h3>Confirmar solicitação de compra</h3>
-                        <p>
-                          Ao confirmar, o exemplar fica bloqueado para outros
-                          compradores.
-                          <strong>
-                            {" "}
-                            Você não poderá cancelar a reserva após o envio
-                          </strong>{" "}
-                          — caso o vendedor não responda em 30 dias, o anúncio
-                          volta automaticamente para a loja.
-                        </p>
                         <div className="order-confirm-actions">
                           <button
                             type="button"
@@ -516,7 +507,7 @@ export default function ListingDetailPage() {
                         <strong>
                           {formatBrlFromCents(
                             listing.startingPriceInCents ??
-                              listing.priceInCents,
+                            listing.priceInCents,
                           )}
                         </strong>
                         , sem prazo fixo de encerramento. Visitantes podem
@@ -537,7 +528,7 @@ export default function ListingDetailPage() {
                           <strong>
                             {formatBrlFromCents(
                               listing.startingPriceInCents ??
-                                listing.priceInCents,
+                              listing.priceInCents,
                             )}
                           </strong>
                           .
@@ -546,11 +537,14 @@ export default function ListingDetailPage() {
                           Sua proposta (R$)
                           <input
                             inputMode="decimal"
-                            value={proposalAmount}
-                            onChange={(event) =>
-                              setProposalAmount(event.target.value)
-                            }
-                            placeholder="Ex.: 125,00"
+                            value={proposalAmount ? `R$ ${proposalAmount}` : ""}
+                            onChange={(event) => {
+                              const cleaned = event.target.value
+                                .replace(/^R\$\s*/i, "")
+                                .replace(/[^\d.,]/g, "");
+                              setProposalAmount(cleaned);
+                            }}
+                            placeholder="Ex.: R$ 125,00"
                             aria-label="Valor da proposta em reais"
                           />
                         </label>
@@ -689,8 +683,7 @@ export default function ListingDetailPage() {
                         Aguardando o vendedor confirmar a disponibilidade
                         {listing.activeOrder.expiresAt
                           ? ` (prazo limite: ${formatDatePtBr(listing.activeOrder.expiresAt)})`
-                          : ""}
-                        . O comprador não pode cancelar após iniciar a reserva.
+                          : ""}.
                       </p>
                     </>
                   ) : (
@@ -710,9 +703,8 @@ export default function ListingDetailPage() {
 
               {listing.status === "NEGOCIACAO_ABERTA" && (
                 <div
-                  className={`order-status-panel ${
-                    isOwner || isActiveBuyer ? "is-open" : ""
-                  }`}
+                  className={`order-status-panel ${isOwner || isActiveBuyer ? "is-open" : ""
+                    }`}
                 >
                   {isOwner || isActiveBuyer ? (
                     <>

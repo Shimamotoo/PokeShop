@@ -3,7 +3,7 @@ const TCGDEX_API_URL = 'https://api.tcgdex.net/v2/pt';
 type FetchLike = typeof fetch;
 
 export type TcgdexClient = {
-  listCards(): Promise<unknown[]>;
+  listCards(setId?: string): Promise<unknown[]>;
   getCard(id: string): Promise<unknown>;
 };
 
@@ -19,7 +19,15 @@ export function createTcgdexClient(fetchImpl: FetchLike = fetch): TcgdexClient {
   }
 
   return {
-    async listCards() {
+    async listCards(setId?: string) {
+      if (setId) {
+        const set = await request(`/sets/${encodeURIComponent(setId)}`);
+        if (typeof set !== 'object' || set === null || !Array.isArray((set as { cards?: unknown }).cards)) {
+          throw new Error(`TCGdex retornou uma expansão inválida para "${setId}".`);
+        }
+        return (set as { cards: unknown[] }).cards;
+      }
+
       const cards = await request('/cards');
       if (!Array.isArray(cards)) {
         throw new Error('TCGdex retornou uma lista de cartas inválida.');

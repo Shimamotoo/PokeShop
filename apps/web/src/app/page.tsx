@@ -8,6 +8,7 @@ import type { CatalogSearchResponse } from '@pokeshop/shared';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/features/auth/use-auth';
 import { NegotiationsNavLink } from '@/features/chat/components/negotiations-nav-link';
+import { RaritySymbol } from '@/features/catalog/components/rarity-symbol';
 
 const SKELETON_SLOTS = Array.from({ length: 12 }, (_, index) => index);
 
@@ -141,11 +142,6 @@ export default function CatalogPage() {
               <h2>
                 {submittedQuery ? `Resultados para "${submittedQuery}"` : 'Todas as cartas'}
               </h2>
-              <span className="results-count" aria-live="polite">
-                {isLoading
-                  ? 'Carregando…'
-                  : `${results?.total ?? 0} ${results?.total === 1 ? 'item' : 'itens'}`}
-              </span>
             </div>
             <div className="sort-label">
               <SlidersHorizontal size={15} aria-hidden="true" />
@@ -191,8 +187,8 @@ export default function CatalogPage() {
                       <span className="card-meta">
                         <span>Nº {card.cardNumber}</span>
                         <span className="rarity-mark">
-                          <i aria-hidden="true" />
-                          {card.rarity}
+                          <RaritySymbol rarity={card.rarity} />
+                          <span className="rarity-label">{card.rarity}</span>
                         </span>
                       </span>
                     </span>

@@ -20,9 +20,29 @@ const repository = {
   },
 };
 
+function resolveSetId(argv: string[]): string | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--set' && argv[index + 1]) {
+      return argv[index + 1].trim() || undefined;
+    }
+    if (arg.startsWith('--set=')) {
+      return arg.slice('--set='.length).trim() || undefined;
+    }
+    if (!arg.startsWith('-')) {
+      return arg.trim() || undefined;
+    }
+  }
+
+  return process.env.TCGDEX_SET_ID?.trim() || undefined;
+}
+
+const setId = resolveSetId(process.argv.slice(2));
+
 try {
-  const result = await syncCatalog(createTcgdexClient(), repository);
-  console.info(`Catálogo sincronizado: ${result.imported} importadas, ${result.ignored} ignoradas.`);
+  const result = await syncCatalog(createTcgdexClient(), repository, { setId });
+  const scope = setId ? ` (expansão ${setId})` : '';
+  console.info(`Catálogo sincronizado${scope}: ${result.imported} importadas, ${result.ignored} ignoradas.`);
 } finally {
   await prisma.$disconnect();
 }

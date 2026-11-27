@@ -111,7 +111,7 @@ export default function NegotiationsPage() {
             <NegotiationsNavLink />
             <Link className="back-link" href="/">
               <ArrowLeft size={15} aria-hidden="true" />
-              <span>Voltar para a vitrine</span>
+              <span>Voltar</span>
             </Link>
           </div>
         </div>
@@ -123,8 +123,7 @@ export default function NegotiationsPage() {
             <div>
               <h1>Minhas negociações</h1>
               <p>
-                Acompanhe solicitações recebidas nos seus anúncios e reservas que você
-                iniciou por preço fixo.
+                Acompanhe solicitações recebidas nos seus anúncios e reservas.
               </p>
             </div>
           </div>
@@ -154,9 +153,8 @@ export default function NegotiationsPage() {
                   type="button"
                   role="tab"
                   aria-selected={activeTab === 'seller'}
-                  className={`negotiations-tab-btn ${
-                    activeTab === 'seller' ? 'is-active' : ''
-                  }`}
+                  className={`negotiations-tab-btn ${activeTab === 'seller' ? 'is-active' : ''
+                    }`}
                   onClick={() => setActiveTab('seller')}
                 >
                   Solicitações recebidas ({sellerOrders.length})
@@ -165,9 +163,8 @@ export default function NegotiationsPage() {
                   type="button"
                   role="tab"
                   aria-selected={activeTab === 'buyer'}
-                  className={`negotiations-tab-btn ${
-                    activeTab === 'buyer' ? 'is-active' : ''
-                  }`}
+                  className={`negotiations-tab-btn ${activeTab === 'buyer' ? 'is-active' : ''
+                    }`}
                   onClick={() => setActiveTab('buyer')}
                 >
                   Minhas reservas ({buyerOrders.length})
@@ -241,8 +238,8 @@ export default function NegotiationsPage() {
                   </h3>
                   <p>
                     {activeTab === 'seller'
-                      ? 'Quando um comprador reservar um anúncio seu a preço fixo, ele aparecerá aqui para confirmação.'
-                      : 'Explore o catálogo para encontrar exemplares disponíveis por preço fixo.'}
+                      ? 'Quando um comprador reservar um anúncio, ele aparecerá aqui para confirmação.'
+                      : 'Explore o catálogo para encontrar exemplares disponíveis.'}
                   </p>
                 </div>
               ) : (
@@ -250,132 +247,122 @@ export default function NegotiationsPage() {
                   {visibleOrders.map((order) => {
                     const unreadCount = unreadByOrderMap.get(order.id) ?? 0;
                     return (
-                    <article key={order.id} className="listing-row-card">
-                      <div className="listing-row-main">
-                        <div className="listing-row-badges">
-                          <span
-                            className={`listing-status-chip status-chip-${order.status.toLowerCase()}`}
-                          >
-                            {OrderStatusLabels[order.status]}
-                          </span>
-                          <span
-                            className={`condition-badge condition-${order.listing.condition.toLowerCase()}`}
-                          >
-                            {CardConditionLabels[order.listing.condition]}
-                          </span>
-                          <span className="listing-meta-pill">
-                            {order.listing.card.setName} • Nº{' '}
-                            {order.listing.card.cardNumber}
-                          </span>
-                          {unreadCount > 0 && (
-                            <span className="chat-unread-pill">
-                              {unreadCount}{' '}
-                              {unreadCount === 1
-                                ? 'mensagem não lida'
-                                : 'mensagens não lidas'}
-                            </span>
-                          )}
-                        </div>
-
-                        <h2 className="negotiation-card-title">
-                          {order.listing.card.name}
-                        </h2>
-
-                        <p className="listing-row-seller">
-                          {activeTab === 'seller' ? (
-                            <>
-                              Comprador: <strong>{order.buyer.name}</strong>
-                            </>
-                          ) : (
-                            <>
-                              Vendedor: <strong>{order.seller.name}</strong>
-                            </>
-                          )}
-                        </p>
-
-                        {order.status === 'AGUARDANDO_CONFIRMACAO' && (
-                          <p className="negotiation-deadline-note">
-                            <Clock size={14} aria-hidden="true" />
-                            <span>
-                              {activeTab === 'seller'
-                                ? `Aguardando sua confirmação${
-                                    order.expiresAt
-                                      ? ` até ${formatDatePtBr(order.expiresAt)}`
-                                      : ''
-                                  }`
-                                : `Aguardando confirmação do vendedor${
-                                    order.expiresAt
-                                      ? ` até ${formatDatePtBr(order.expiresAt)}`
-                                      : ''
-                                  } • sem cancelamento pelo comprador`}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="listing-row-aside">
-                        <div className="listing-price-block">
-                          <span className="listing-sale-mode">
-                            {ListingSaleTypeLabels[order.listing.saleType]}
-                          </span>
-                          <strong className="listing-price-value">
-                            {formatBrlFromCents(order.listing.priceInCents)}
-                          </strong>
-                        </div>
-
-                        <div className="listing-row-actions">
-                          <Link
-                            className="listing-view-link"
-                            href={`/listings/${encodeURIComponent(order.listingId)}`}
-                          >
-                            Ver anúncio
-                          </Link>
-
-                          {(order.status === 'NEGOCIACAO_ABERTA' ||
-                            order.status === 'VENDIDO') && (
-                            <Link
-                              className="chat-open-link"
-                              href={`/negociacoes/${encodeURIComponent(order.id)}`}
+                      <article key={order.id} className="listing-row-card">
+                        <div className="listing-row-main">
+                          <div className="listing-row-badges">
+                            <span
+                              className={`listing-status-chip status-chip-${order.status.toLowerCase()}`}
                             >
-                              <MessageSquare size={14} aria-hidden="true" />
-                              <span>
-                                {order.status === 'NEGOCIACAO_ABERTA'
-                                  ? 'Abrir chat'
-                                  : 'Ver histórico'}
+                              {OrderStatusLabels[order.status]}
+                            </span>
+                            <span className="listing-meta-pill">
+                              {order.listing.card.setName} • Nº{' '}
+                              {order.listing.card.cardNumber}
+                            </span>
+                            {unreadCount > 0 && (
+                              <span className="chat-unread-pill">
+                                {unreadCount}{' '}
+                                {unreadCount === 1
+                                  ? 'mensagem não lida'
+                                  : 'mensagens não lidas'}
                               </span>
-                            </Link>
-                          )}
+                            )}
+                          </div>
 
-                          {activeTab === 'seller' &&
-                            order.status === 'AGUARDANDO_CONFIRMACAO' && (
+                          <h2 className="negotiation-card-title">
+                            {order.listing.card.name}
+                          </h2>
+
+                          <p className="listing-row-seller">
+                            {activeTab === 'seller' ? (
                               <>
-                                <button
-                                  type="button"
-                                  className="order-accept-btn"
-                                  onClick={() =>
-                                    handleSellerDecision(order.id, 'confirm')
-                                  }
-                                  disabled={busyOrderId === order.id}
-                                >
-                                  <CheckCircle2 size={14} aria-hidden="true" />
-                                  <span>Confirmar</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="listing-cancel-btn"
-                                  onClick={() =>
-                                    handleSellerDecision(order.id, 'decline')
-                                  }
-                                  disabled={busyOrderId === order.id}
-                                >
-                                  <XCircle size={14} aria-hidden="true" />
-                                  <span>Recusar</span>
-                                </button>
+                                Comprador: <strong>{order.buyer.name}</strong>
+                              </>
+                            ) : (
+                              <>
+                                Vendedor: <strong>{order.seller.name}</strong>
                               </>
                             )}
+                          </p>
+
+                          {order.status === 'AGUARDANDO_CONFIRMACAO' && (
+                            <p className="negotiation-deadline-note">
+                              <Clock size={14} aria-hidden="true" />
+                              <span>
+                                {activeTab === 'seller'
+                                  ? `Aguardando sua confirmação${order.expiresAt
+                                    ? ` até ${formatDatePtBr(order.expiresAt)}`
+                                    : ''
+                                  }`
+                                  : `Aguardando confirmação do vendedor${order.expiresAt
+                                    ? ` até ${formatDatePtBr(order.expiresAt)}`
+                                    : ''
+                                  } • sem cancelamento pelo comprador`}
+                              </span>
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    </article>
+
+                        <div className="listing-row-aside">
+                          <div className="listing-price-block">
+                            <strong className="listing-price-value">
+                              {formatBrlFromCents(order.listing.priceInCents)}
+                            </strong>
+                          </div>
+
+                          <div className="listing-row-actions">
+                            <Link
+                              className="listing-view-link"
+                              href={`/listings/${encodeURIComponent(order.listingId)}`}
+                            >
+                              Ver anúncio
+                            </Link>
+
+                            {(order.status === 'NEGOCIACAO_ABERTA' ||
+                              order.status === 'VENDIDO') && (
+                                <Link
+                                  className="chat-open-link"
+                                  href={`/negociacoes/${encodeURIComponent(order.id)}`}
+                                >
+                                  <MessageSquare size={14} aria-hidden="true" />
+                                  <span>
+                                    {order.status === 'NEGOCIACAO_ABERTA'
+                                      ? 'Abrir chat'
+                                      : 'Ver histórico'}
+                                  </span>
+                                </Link>
+                              )}
+
+                            {activeTab === 'seller' &&
+                              order.status === 'AGUARDANDO_CONFIRMACAO' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="order-accept-btn"
+                                    onClick={() =>
+                                      handleSellerDecision(order.id, 'confirm')
+                                    }
+                                    disabled={busyOrderId === order.id}
+                                  >
+                                    <CheckCircle2 size={14} aria-hidden="true" />
+                                    <span>Confirmar</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="listing-cancel-btn"
+                                    onClick={() =>
+                                      handleSellerDecision(order.id, 'decline')
+                                    }
+                                    disabled={busyOrderId === order.id}
+                                  >
+                                    <XCircle size={14} aria-hidden="true" />
+                                    <span>Recusar</span>
+                                  </button>
+                                </>
+                              )}
+                          </div>
+                        </div>
+                      </article>
                     );
                   })}
                 </div>
