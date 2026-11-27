@@ -23,6 +23,7 @@ describe('Repositório Prisma de propostas', () => {
   });
 
   beforeEach(async () => {
+    await prisma.notification.deleteMany();
     await prisma.chatMessage.deleteMany();
     await prisma.chatRoom.deleteMany();
     await prisma.proposal.deleteMany();

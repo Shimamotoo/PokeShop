@@ -7,6 +7,7 @@ import { Search, SlidersHorizontal } from 'lucide-react';
 import type { CatalogSearchResponse } from '@pokeshop/shared';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/features/auth/use-auth';
+import { NegotiationsNavLink } from '@/features/chat/components/negotiations-nav-link';
 
 const SKELETON_SLOTS = Array.from({ length: 12 }, (_, index) => index);
 
@@ -93,9 +94,7 @@ export default function CatalogPage() {
           <div className="topbar-actions">
             {user ? (
               <>
-                <Link className="topbar-nav-link" href="/negociacoes">
-                  Negociações
-                </Link>
+                <NegotiationsNavLink />
                 <div className="topbar-user-pill">
                   <span className="topbar-user-name">{user.name}</span>
                   <button className="topbar-logout-btn" type="button" onClick={logout}>

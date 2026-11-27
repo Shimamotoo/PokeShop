@@ -9,6 +9,7 @@ import {
   Clock,
   HandCoins,
   Lock,
+  MessageSquare,
   ShieldCheck,
   ShoppingBag,
   Trash2,
@@ -24,6 +25,7 @@ import {
 import { apiClient } from "@/lib/api-client";
 import { formatBrlFromCents, formatDatePtBr } from "@/lib/format";
 import { useAuth } from "@/features/auth/use-auth";
+import { NegotiationsNavLink } from "@/features/chat/components/negotiations-nav-link";
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -278,11 +280,7 @@ export default function ListingDetailPage() {
             <span>PokeShop</span>
           </Link>
           <div className="topbar-actions">
-            {user && (
-              <Link className="topbar-nav-link" href="/negociacoes">
-                Negociações
-              </Link>
-            )}
+            <NegotiationsNavLink />
             {listing ? (
               <Link
                 className="back-link"
@@ -442,7 +440,7 @@ export default function ListingDetailPage() {
                           }}
                         >
                           <ShoppingBag size={16} aria-hidden="true" />
-                          <span>Comprar por preço fixo</span>
+                          <span>Comprar</span>
                         </button>
                         <p className="order-action-hint">
                           Reserva o exemplar com exclusividade por até 30 dias
@@ -667,7 +665,7 @@ export default function ListingDetailPage() {
                           <span>
                             {isSubmittingAction
                               ? "Processando…"
-                              : "Confirmar disponibilidade"}
+                              : "Confirmar"}
                           </span>
                         </button>
                         <button
@@ -731,6 +729,17 @@ export default function ListingDetailPage() {
                         </Link>
                         .
                       </p>
+                      {listing.activeOrder && (
+                        <div className="order-confirm-actions">
+                          <Link
+                            className="chat-open-link"
+                            href={`/negociacoes/${encodeURIComponent(listing.activeOrder.id)}`}
+                          >
+                            <MessageSquare size={14} aria-hidden="true" />
+                            <span>Abrir chat da negociação</span>
+                          </Link>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -766,10 +775,6 @@ export default function ListingDetailPage() {
                     <dd>{listing.edition}</dd>
                   </div>
                 )}
-                <div>
-                  <dt>Fotos verificadas (S3)</dt>
-                  <dd>{listing.photos.length} de 5</dd>
-                </div>
               </dl>
 
               {listing.description && (

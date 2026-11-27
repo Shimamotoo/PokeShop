@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334';
 export const AUTH_TOKEN_STORAGE_KEY = 'pokeshop.auth.token';
 
 export async function apiClient<T>(

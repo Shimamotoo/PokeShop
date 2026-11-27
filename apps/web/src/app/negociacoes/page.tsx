@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { ArrowLeft, Bell, CheckCircle2, Clock, MessageSquare, XCircle } from 'lucide-react';
 import {
   CardConditionLabels,
+  ListingSaleTypeLabels,
   OrderStatusLabels,
   type ListOrdersResponse,
   type OrderView,
@@ -12,11 +13,19 @@ import {
 import { apiClient } from '@/lib/api-client';
 import { formatBrlFromCents, formatDatePtBr } from '@/lib/format';
 import { useAuth } from '@/features/auth/use-auth';
+import { NegotiationsNavLink } from '@/features/chat/components/negotiations-nav-link';
+import { useChatIndicators } from '@/features/chat/hooks/use-chat-indicators';
 
 type NegotiationsTab = 'seller' | 'buyer';
 
 export default function NegotiationsPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
+  const {
+    indicators,
+    refresh: refreshIndicators,
+    markAlertAsRead,
+    markAllAlertsAsRead,
+  } = useChatIndicators(Boolean(user));
   const [activeTab, setActiveTab] = useState<NegotiationsTab>('seller');
   const [orders, setOrders] = useState<OrderView[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
@@ -68,6 +77,7 @@ export default function NegotiationsPage() {
           : 'Solicitação recusada. O exemplar voltou a ficar disponível na loja.'
       );
       await loadOrders();
+      await refreshIndicators();
     } catch (decisionErr) {
       setError(
         decisionErr instanceof Error
@@ -82,6 +92,10 @@ export default function NegotiationsPage() {
   const sellerOrders = user ? orders.filter((order) => order.sellerId === user.id) : [];
   const buyerOrders = user ? orders.filter((order) => order.buyerId === user.id) : [];
   const visibleOrders = activeTab === 'seller' ? sellerOrders : buyerOrders;
+  const unreadAlerts = (indicators?.alerts ?? []).filter((alert) => alert.readAt === null);
+  const unreadByOrderMap = new Map(
+    (indicators?.unreadByOrder ?? []).map((item) => [item.orderId, item.unreadCount])
+  );
 
   return (
     <div className="detail-shell">
@@ -94,6 +108,7 @@ export default function NegotiationsPage() {
             <span>PokeShop</span>
           </Link>
           <div className="topbar-actions">
+            <NegotiationsNavLink />
             <Link className="back-link" href="/">
               <ArrowLeft size={15} aria-hidden="true" />
               <span>Voltar para a vitrine</span>
@@ -159,6 +174,48 @@ export default function NegotiationsPage() {
                 </button>
               </div>
 
+              {unreadAlerts.length > 0 && (
+                <section className="alerts-strip" aria-label="Atualizações recentes">
+                  <div className="alerts-strip-header">
+                    <div className="alerts-strip-title">
+                      <Bell size={15} aria-hidden="true" />
+                      <strong>Atualizações de estado ({unreadAlerts.length})</strong>
+                    </div>
+                    <button
+                      type="button"
+                      className="alerts-clear-btn"
+                      onClick={() => void markAllAlertsAsRead()}
+                    >
+                      Marcar todos como lidos
+                    </button>
+                  </div>
+                  <ul className="alerts-strip-list">
+                    {unreadAlerts.map((alert) => (
+                      <li key={alert.id} className="alerts-strip-item">
+                        <span>{alert.message}</span>
+                        <div className="alerts-strip-actions">
+                          {alert.orderId && (
+                            <Link
+                              className="auth-inline-link"
+                              href={`/negociacoes/${encodeURIComponent(alert.orderId)}`}
+                            >
+                              Ver chat
+                            </Link>
+                          )}
+                          <button
+                            type="button"
+                            className="alerts-dismiss-btn"
+                            onClick={() => void markAlertAsRead(alert.id)}
+                          >
+                            Marcar como lido
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
               {feedback && (
                 <div className="listing-feedback-banner" role="status">
                   <span>{feedback}</span>
@@ -190,7 +247,9 @@ export default function NegotiationsPage() {
                 </div>
               ) : (
                 <div className="listings-list">
-                  {visibleOrders.map((order) => (
+                  {visibleOrders.map((order) => {
+                    const unreadCount = unreadByOrderMap.get(order.id) ?? 0;
+                    return (
                     <article key={order.id} className="listing-row-card">
                       <div className="listing-row-main">
                         <div className="listing-row-badges">
@@ -208,6 +267,14 @@ export default function NegotiationsPage() {
                             {order.listing.card.setName} • Nº{' '}
                             {order.listing.card.cardNumber}
                           </span>
+                          {unreadCount > 0 && (
+                            <span className="chat-unread-pill">
+                              {unreadCount}{' '}
+                              {unreadCount === 1
+                                ? 'mensagem não lida'
+                                : 'mensagens não lidas'}
+                            </span>
+                          )}
                         </div>
 
                         <h2 className="negotiation-card-title">
@@ -248,7 +315,9 @@ export default function NegotiationsPage() {
 
                       <div className="listing-row-aside">
                         <div className="listing-price-block">
-                          <span className="listing-sale-mode">Preço fixo</span>
+                          <span className="listing-sale-mode">
+                            {ListingSaleTypeLabels[order.listing.saleType]}
+                          </span>
                           <strong className="listing-price-value">
                             {formatBrlFromCents(order.listing.priceInCents)}
                           </strong>
@@ -261,6 +330,21 @@ export default function NegotiationsPage() {
                           >
                             Ver anúncio
                           </Link>
+
+                          {(order.status === 'NEGOCIACAO_ABERTA' ||
+                            order.status === 'VENDIDO') && (
+                            <Link
+                              className="chat-open-link"
+                              href={`/negociacoes/${encodeURIComponent(order.id)}`}
+                            >
+                              <MessageSquare size={14} aria-hidden="true" />
+                              <span>
+                                {order.status === 'NEGOCIACAO_ABERTA'
+                                  ? 'Abrir chat'
+                                  : 'Ver histórico'}
+                              </span>
+                            </Link>
+                          )}
 
                           {activeTab === 'seller' &&
                             order.status === 'AGUARDANDO_CONFIRMACAO' && (
@@ -292,7 +376,8 @@ export default function NegotiationsPage() {
                         </div>
                       </div>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>

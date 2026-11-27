@@ -248,18 +248,28 @@ export function createPrismaProposalsRepository(
             buyerId: proposal.buyerId,
             sellerId: proposal.listing.sellerId,
             status: "NEGOCIACAO_ABERTA",
+            confirmedAt: input.now,
             createdAt: input.now,
             updatedAt: input.now,
+            chatRoom: {
+              create: {
+                lastMessageAt: input.now,
+                createdAt: input.now,
+                updatedAt: input.now,
+              },
+            },
           },
           include: orderInclude,
         });
 
-        await tx.chatRoom.create({
+        await tx.notification.create({
           data: {
+            userId: proposal.buyerId,
             orderId: order.id,
-            lastMessageAt: input.now,
+            type: "PROPOSAL_ACCEPTED",
+            message:
+              "Sua proposta foi aceita! O chat da negociação já está disponível.",
             createdAt: input.now,
-            updatedAt: input.now,
           },
         });
 

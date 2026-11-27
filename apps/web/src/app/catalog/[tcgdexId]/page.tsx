@@ -22,6 +22,7 @@ import {
 import { apiClient } from '@/lib/api-client';
 import { formatBrlFromCents } from '@/lib/format';
 import { useAuth } from '@/features/auth/use-auth';
+import { NegotiationsNavLink } from '@/features/chat/components/negotiations-nav-link';
 
 type StagedPhoto = {
   s3Key: string;
@@ -265,11 +266,7 @@ export default function CatalogCardPage() {
             <span>PokeShop</span>
           </Link>
           <div className="topbar-actions">
-            {user && (
-              <Link className="topbar-nav-link" href="/negociacoes">
-                Negociações
-              </Link>
-            )}
+            <NegotiationsNavLink />
             <Link className="back-link" href="/">
               <ArrowLeft size={15} aria-hidden="true" />
               <span>Voltar para a vitrine</span>

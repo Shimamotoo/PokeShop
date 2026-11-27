@@ -182,7 +182,7 @@ export function createPrismaOrdersRepository(prisma: PrismaClient): OrdersReposi
           return null;
         }
 
-        return tx.order.create({
+        const order = await tx.order.create({
           data: {
             listingId: input.listingId,
             buyerId: input.buyerId,
@@ -193,6 +193,18 @@ export function createPrismaOrdersRepository(prisma: PrismaClient): OrdersReposi
           },
           include: orderInclude,
         });
+
+        await tx.notification.create({
+          data: {
+            userId: input.sellerId,
+            orderId: order.id,
+            type: 'ORDER_RESERVED',
+            message: 'Você recebeu uma nova solicitação de compra por preço fixo.',
+            createdAt: input.now,
+          },
+        });
+
+        return order;
       });
     },
 
@@ -234,6 +246,7 @@ export function createPrismaOrdersRepository(prisma: PrismaClient): OrdersReposi
             select: {
               id: true,
               listingId: true,
+              buyerId: true,
               status: true,
             },
           });
@@ -282,6 +295,17 @@ export function createPrismaOrdersRepository(prisma: PrismaClient): OrdersReposi
             },
           });
 
+          await tx.notification.create({
+            data: {
+              userId: existing.buyerId,
+              orderId,
+              type: 'ORDER_CONFIRMED',
+              message:
+                'Disponibilidade confirmada! O chat da negociação já está aberto.',
+              createdAt: now,
+            },
+          });
+
           return tx.order.findUnique({
             where: { id: orderId },
             include: orderInclude,
@@ -306,6 +330,7 @@ export function createPrismaOrdersRepository(prisma: PrismaClient): OrdersReposi
             select: {
               id: true,
               listingId: true,
+              buyerId: true,
               status: true,
             },
           });
@@ -344,6 +369,17 @@ export function createPrismaOrdersRepository(prisma: PrismaClient): OrdersReposi
           if (updatedListing.count === 0) {
             throw new ConflictRollbackError();
           }
+
+          await tx.notification.create({
+            data: {
+              userId: existing.buyerId,
+              orderId,
+              type: 'ORDER_DECLINED',
+              message:
+                'O vendedor recusou a solicitação de compra. O exemplar voltou à loja.',
+              createdAt: now,
+            },
+          });
 
           return tx.order.findUnique({
             where: { id: orderId },
